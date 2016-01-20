@@ -7,28 +7,42 @@ import os.path
 import urllib.request
 
 import invoke
+import packaging.specifiers
+import packaging.version
 
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
 
 @invoke.task(default=True)
-def installer(template_path=os.path.join(PROJECT_ROOT, "template.py"),
+def installer(version=None,
+              template_path=os.path.join(PROJECT_ROOT, "template.py"),
               installer_path=os.path.join(PROJECT_ROOT, "get-pip.py")):
 
-    print("[generate.installer] Generating installer")
+    print("[generate.installer] Generating installer (using {})".format(
+        "pip" + version if version is not None else "latest"
+    ))
 
     # Load our wrapper template
     with open(template_path, "r", encoding="utf8") as fp:
         WRAPPER_TEMPLATE = fp.read()
 
-    # Determine what the latest version of pip on PyPI is.
+    # Get all of the versions on PyPI
     resp = urllib.request.urlopen("https://pypi.python.org/pypi/pip/json")
     data = json.loads(resp.read().decode("utf8"))
-    version = data["info"]["version"]
+    versions = sorted(data["releases"].keys(), key=packaging.version.parse)
+
+    # Filter our list of versions based on the given specifier
+    s = packaging.specifiers.SpecifierSet("" if version is None else version)
+    versions = list(s.filter(versions))
+
+    # Select the latest version that matches our specifier is
+    latest = versions[-1]
+
+    # Select the wheel file (we assume there will be only one per release)
     file_urls = [
         (x["url"], x["md5_digest"])
-        for x in data["releases"][version]
+        for x in data["releases"][latest]
         if x["url"].endswith(".whl")
     ]
     assert len(file_urls) == 1
