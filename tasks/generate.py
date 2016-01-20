@@ -14,12 +14,17 @@ import packaging.version
 PROJECT_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
 
-@invoke.task(default=True)
-def installer(version=None,
-              template_path=os.path.join(PROJECT_ROOT, "template.py"),
-              installer_path=os.path.join(PROJECT_ROOT, "get-pip.py")):
+def _path(pyversion=None):
+    parts = [PROJECT_ROOT, pyversion, "get-pip.py"]
+    return os.path.join(*filter(None, parts))
 
-    print("[generate.installer] Generating installer (using {})".format(
+
+@invoke.task
+def installer(version=None, installer_path=_path(),
+              template_path=os.path.join(PROJECT_ROOT, "template.py")):
+
+    print("[generate.installer] Generating installer {} (using {})".format(
+        os.path.relpath(installer_path, PROJECT_ROOT),
         "pip" + version if version is not None else "latest"
     ))
 
@@ -69,8 +74,14 @@ def installer(version=None,
     for i in range(0, len(zipdata), 79):
         chunked.append(zipdata[i:i + 79])
 
+    os.makedirs(os.path.dirname(installer_path), exist_ok=True)
     with open(installer_path, "w") as fp:
-        fp.write(WRAPPER_TEMPLATE.format(zipfile="\n".join(chunked)))
+        fp.write(
+            WRAPPER_TEMPLATE.format(
+                version="" if version is None else version,
+                zipfile="\n".join(chunked),
+            ),
+        )
 
     # Ensure the permissions on the newly created file
     oldmode = os.stat(installer_path).st_mode & 0o7777
@@ -78,3 +89,14 @@ def installer(version=None,
     os.chmod(installer_path, newmode)
 
     print("[generate.installer] Generated installer")
+
+
+@invoke.task(
+    default=True,
+    pre=[
+        invoke.call(installer),
+        invoke.call(installer, version="<8", installer_path=_path("3.2")),
+    ],
+)
+def all():
+    pass
