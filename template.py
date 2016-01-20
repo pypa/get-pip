@@ -185,7 +185,7 @@ def main():
         # Unpack the zipfile into the temporary directory
         pip_zip = os.path.join(tmpdir, "pip.zip")
         with open(pip_zip, "wb") as fp:
-            fp.write(b85decode(DATA.replace(b"\\n", b"")))
+            fp.write(b85decode(DATA.replace(b"\n", b"")))
 
         # Add the zipfile to sys.path so that we can import it
         sys.path.insert(0, pip_zip)
