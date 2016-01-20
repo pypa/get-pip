@@ -7,28 +7,47 @@ import os.path
 import urllib.request
 
 import invoke
+import packaging.specifiers
+import packaging.version
 
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
 
-@invoke.task(default=True)
-def installer(template_path=os.path.join(PROJECT_ROOT, "template.py"),
-              installer_path=os.path.join(PROJECT_ROOT, "get-pip.py")):
+def _path(pyversion=None):
+    parts = [PROJECT_ROOT, pyversion, "get-pip.py"]
+    return os.path.join(*filter(None, parts))
 
-    print("[generate.installer] Generating installer")
+
+@invoke.task
+def installer(version=None, installer_path=_path(),
+              template_path=os.path.join(PROJECT_ROOT, "template.py")):
+
+    print("[generate.installer] Generating installer {} (using {})".format(
+        os.path.relpath(installer_path, PROJECT_ROOT),
+        "pip" + version if version is not None else "latest"
+    ))
 
     # Load our wrapper template
     with open(template_path, "r", encoding="utf8") as fp:
         WRAPPER_TEMPLATE = fp.read()
 
-    # Determine what the latest version of pip on PyPI is.
+    # Get all of the versions on PyPI
     resp = urllib.request.urlopen("https://pypi.python.org/pypi/pip/json")
     data = json.loads(resp.read().decode("utf8"))
-    version = data["info"]["version"]
+    versions = sorted(data["releases"].keys(), key=packaging.version.parse)
+
+    # Filter our list of versions based on the given specifier
+    s = packaging.specifiers.SpecifierSet("" if version is None else version)
+    versions = list(s.filter(versions))
+
+    # Select the latest version that matches our specifier is
+    latest = versions[-1]
+
+    # Select the wheel file (we assume there will be only one per release)
     file_urls = [
         (x["url"], x["md5_digest"])
-        for x in data["releases"][version]
+        for x in data["releases"][latest]
         if x["url"].endswith(".whl")
     ]
     assert len(file_urls) == 1
@@ -55,8 +74,14 @@ def installer(template_path=os.path.join(PROJECT_ROOT, "template.py"),
     for i in range(0, len(zipdata), 79):
         chunked.append(zipdata[i:i + 79])
 
+    os.makedirs(os.path.dirname(installer_path), exist_ok=True)
     with open(installer_path, "w") as fp:
-        fp.write(WRAPPER_TEMPLATE.format(zipfile="\n".join(chunked)))
+        fp.write(
+            WRAPPER_TEMPLATE.format(
+                version="" if version is None else version,
+                zipfile="\n".join(chunked),
+            ),
+        )
 
     # Ensure the permissions on the newly created file
     oldmode = os.stat(installer_path).st_mode & 0o7777
@@ -64,3 +89,14 @@ def installer(template_path=os.path.join(PROJECT_ROOT, "template.py"),
     os.chmod(installer_path, newmode)
 
     print("[generate.installer] Generated installer")
+
+
+@invoke.task(
+    default=True,
+    pre=[
+        invoke.call(installer),
+        invoke.call(installer, version="<8", installer_path=_path("3.2")),
+    ],
+)
+def all():
+    pass
