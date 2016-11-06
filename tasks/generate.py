@@ -96,6 +96,7 @@ def installer(version=None, installer_path=_path(),
     pre=[
         invoke.call(installer),
         invoke.call(installer, version="<8", installer_path=_path("3.2")),
+        invoke.call(installer, version="<10", installer_path=_path("2.6")),
     ],
 )
 def all():
