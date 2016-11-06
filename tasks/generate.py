@@ -20,7 +20,8 @@ def _path(pyversion=None):
 
 
 @invoke.task
-def installer(version=None, installer_path=_path(),
+def installer(ctx,
+              version=None, installer_path=_path(),
               template_path=os.path.join(PROJECT_ROOT, "template.py")):
 
     print("[generate.installer] Generating installer {} (using {})".format(
@@ -99,5 +100,5 @@ def installer(version=None, installer_path=_path(),
         invoke.call(installer, version="<10", installer_path=_path("2.6")),
     ],
 )
-def all():
+def all(ctx):
     pass
