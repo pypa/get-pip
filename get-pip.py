@@ -27,6 +27,14 @@ import sys
 import struct
 import tempfile
 
+# Check for wrong embedded python settings
+if 'site' not in sys.modules:
+    print('site package is not loaded by default. Please edit python%d%d._pth' % (sys.version_info[0], sys.version_info[1]))
+
+    # Initialize site package manually
+    import site
+    site.main()
+
 # Useful for very coarse version differentiation.
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
