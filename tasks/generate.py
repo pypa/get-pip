@@ -80,6 +80,7 @@ def installer(ctx,
         fp.write(
             WRAPPER_TEMPLATE.format(
                 version="" if version is None else version,
+                latest=latest,
                 zipfile="\n".join(chunked),
             ),
         )
