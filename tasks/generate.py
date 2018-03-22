@@ -21,12 +21,13 @@ def _path(pyversion=None):
 
 @invoke.task
 def installer(ctx,
-              version=None, installer_path=_path(),
+              pip_version=None, wheel_version=None, setuptools_version=None,
+              installer_path=_path(),
               template_path=os.path.join(PROJECT_ROOT, "template.py")):
 
     print("[generate.installer] Generating installer {} (using {})".format(
         os.path.relpath(installer_path, PROJECT_ROOT),
-        "pip" + version if version is not None else "latest"
+        "pip" + pip_version if pip_version is not None else "latest"
     ))
 
     # Load our wrapper template
@@ -39,7 +40,8 @@ def installer(ctx,
     versions = sorted(data["releases"].keys(), key=packaging.version.parse)
 
     # Filter our list of versions based on the given specifier
-    s = packaging.specifiers.SpecifierSet("" if version is None else version)
+    s = packaging.specifiers.SpecifierSet(
+        "" if pip_version is None else pip_version)
     versions = list(s.filter(versions))
 
     # Select the latest version that matches our specifier is
@@ -79,7 +81,10 @@ def installer(ctx,
     with open(installer_path, "w") as fp:
         fp.write(
             WRAPPER_TEMPLATE.format(
-                version="" if version is None else version,
+                pip_version="" if pip_version is None else pip_version,
+                wheel_version="" if wheel_version is None else wheel_version,
+                setuptools_version=(
+                    "" if setuptools_version is None else setuptools_version),
                 installed_version=latest,
                 zipfile="\n".join(chunked),
             ),
@@ -97,8 +102,16 @@ def installer(ctx,
     default=True,
     pre=[
         invoke.call(installer),
-        invoke.call(installer, version="<8", installer_path=_path("3.2")),
-        invoke.call(installer, version="<10", installer_path=_path("2.6")),
+        invoke.call(installer, installer_path=_path("2.6"),
+                    pip_version="<10",
+                    wheel_version="<0.30",
+                    setuptools_version="<37"),
+        invoke.call(installer, installer_path=_path("3.2"),
+                    pip_version="<8",
+                    wheel_version="<0.30",
+                    setuptools_version="<30"),
+        invoke.call(installer, installer_path=_path("3.3"),
+                    wheel_version="<0.30"),
     ],
 )
 def all(ctx):

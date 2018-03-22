@@ -149,9 +149,9 @@ def bootstrap(tmpdir=None):
     if implicit_pip:
         args += ["pip<8"]
     if implicit_setuptools:
-        args += ["setuptools"]
+        args += ["setuptools<30"]
     if implicit_wheel:
-        args += ["wheel"]
+        args += ["wheel<0.30"]
 
     delete_tmpdir = False
     try:

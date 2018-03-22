@@ -147,11 +147,11 @@ def bootstrap(tmpdir=None):
 
     # Add any implicit installations to the end of our args
     if implicit_pip:
-        args += ["pip{version}"]
+        args += ["pip{pip_version}"]
     if implicit_setuptools:
-        args += ["setuptools"]
+        args += ["setuptools{setuptools_version}"]
     if implicit_wheel:
-        args += ["wheel"]
+        args += ["wheel{wheel_version}"]
 
     delete_tmpdir = False
     try:
