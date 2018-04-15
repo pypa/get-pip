@@ -19,11 +19,14 @@ def _path(pyversion=None):
     return os.path.join(*filter(None, parts))
 
 
+def _template(name="default.py"):
+    return os.path.join(PROJECT_ROOT, "templates", name)
+
+
 @invoke.task
 def installer(ctx,
               pip_version=None, wheel_version=None, setuptools_version=None,
-              installer_path=_path(),
-              template_path=os.path.join(PROJECT_ROOT, "template.py")):
+              installer_path=_path(), template_path=_template()):
 
     print("[generate.installer] Generating installer {} (using {})".format(
         os.path.relpath(installer_path, PROJECT_ROOT),
