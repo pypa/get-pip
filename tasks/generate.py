@@ -1,8 +1,11 @@
 import base64
 import hashlib
+import io
 import json
 import os
 import os.path
+import re
+import zipfile
 
 import urllib.request
 
@@ -62,6 +65,18 @@ def installer(ctx,
     # Fetch the  file itself.
     data = urllib.request.urlopen(url).read()
     assert hashlib.md5(data).hexdigest() == expected_hash
+
+    # We need to repack the downloaded wheel file to remove the .dist-info,
+    # after this it will no longer be a valid wheel, but it will still work
+    # perfectly fine for our use cases.
+    new_data = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(data)) as existing_zip:
+        with zipfile.ZipFile(new_data, mode="w") as new_zip:
+            for zinfo in existing_zip.infolist():
+                if re.search(r"pip-.+\.dist-info/", zinfo.filename):
+                    continue
+                new_zip.writestr(zinfo, existing_zip.read(zinfo))
+    data = new_data.getvalue()
 
     # Write out the wrapper script that will take the place of the zip script
     # The reason we need to do this instead of just directly executing the
