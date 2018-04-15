@@ -79,9 +79,9 @@ except ImportError:
 
 def bootstrap(tmpdir=None):
     # Import pip so we can use it to install pip and maybe setuptools too
-    import pip._internal
-    from pip._internal.commands.install import InstallCommand
-    from pip._internal.req import InstallRequirement
+    import pip
+    from pip.commands.install import InstallCommand
+    from pip.req import InstallRequirement
 
     # Wrapper to provide default certificate with the lowest priority
     class CertInstallCommand(InstallCommand):
@@ -94,7 +94,7 @@ def bootstrap(tmpdir=None):
                 self.parser.defaults["cert"] = cert_path  # calculated below
             return super(CertInstallCommand, self).parse_args(args)
 
-    pip._internal.commands_dict["install"] = CertInstallCommand
+    pip.commands_dict["install"] = CertInstallCommand
 
     implicit_pip = True
     implicit_setuptools = True
@@ -165,11 +165,11 @@ def bootstrap(tmpdir=None):
         # can be passed to --cert
         cert_path = os.path.join(tmpdir, "cacert.pem")
         with open(cert_path, "wb") as cert:
-            cert.write(pkgutil.get_data("pip._vendor.certifi", "cacert.pem"))
+            cert.write(pkgutil.get_data("pip._vendor.requests", "cacert.pem"))
 
         # Execute the included pip and use it to install the latest pip and
         # setuptools from PyPI
-        sys.exit(pip._internal.main(["install", "--upgrade"] + args))
+        sys.exit(pip.main(["install", "--upgrade"] + args))
     finally:
         # Remove our temporary directory
         if delete_tmpdir and tmpdir:
