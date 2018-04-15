@@ -153,6 +153,9 @@ def bootstrap(tmpdir=None):
     if implicit_wheel:
         args += ["wheel{wheel_version}"]
 
+    # Add our default arguments
+    args = ["install", "--upgrade", "--force-reinstall"] + args
+
     delete_tmpdir = False
     try:
         # Create a temporary directory to act as a working directory if we were
@@ -169,7 +172,7 @@ def bootstrap(tmpdir=None):
 
         # Execute the included pip and use it to install the latest pip and
         # setuptools from PyPI
-        sys.exit(pip._internal.main(["install", "--upgrade"] + args))
+        sys.exit(pip._internal.main(args))
     finally:
         # Remove our temporary directory
         if delete_tmpdir and tmpdir:
