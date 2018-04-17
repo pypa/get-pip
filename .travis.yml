@@ -12,6 +12,7 @@ python:
 
 script:
  # Simple test runs
+ - ./local-install.sh
  - ./curl-install.sh
 
 after_script:
