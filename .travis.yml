@@ -11,8 +11,16 @@ python:
  - "2.6"
 
 script:
- # Simple test run
- - curl https://bootstrap.pypa.io/get-pip.py | python
+ # Simple test run: legacy
+  - if [[ $TRAVIS_PYTHON_VERSION == 2.6 ]]; then curl https://bootstrap.pypa.io/2.6/get-pip.py | python; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.2 ]]; then curl https://bootstrap.pypa.io/3.2/get-pip.py | python; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.3 ]]; then curl https://bootstrap.pypa.io/3.3/get-pip.py | python; fi
+
+ # Simple test run: newest
+  - if [[ $TRAVIS_PYTHON_VERSION == 2.7 ]]; then curl https://bootstrap.pypa.io/get-pip.py | python; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.4 ]]; then curl https://bootstrap.pypa.io/get-pip.py | python; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then curl https://bootstrap.pypa.io/get-pip.py | python; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then curl https://bootstrap.pypa.io/get-pip.py | python; fi
 
 after_script:
  # Static analysis: for info, won't fail the build
