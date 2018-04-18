@@ -37,6 +37,7 @@ install:
 
 script:
 - .travis/helpers.sh "$TRAVIS_PYTHON_VERSION" "$SCRIPT_SRC"
+- pip -V
 
 after_failure:
 - env
