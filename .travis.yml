@@ -1,14 +1,18 @@
 language: python
 
 python:
- - "3.7-dev"
- - "3.6"
- - "3.5"
- - "3.4"
- - "3.3"
- - "3.2"
- - "2.7"
- - "2.6"
+- "3.7-dev"
+- "3.6"
+- "3.5"
+- "3.4"
+- "3.3"
+- "3.2"
+- "2.7"
+- "2.6"
+
+env:
+- SCRIPT_SRC=local
+- SCRIPT_SRC=remote
 
 before_script:
 - source helpers.sh
@@ -27,6 +31,3 @@ script:
 
 matrix:
   fast_finish: true
-  global:
-  - SCRIPT_SRC=local
-  - SCRIPT_SRC=remote
