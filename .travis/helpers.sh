@@ -1,5 +1,21 @@
-function cat_get_pip() {
+#! /usr/bin/env bash
+
+declare -a SPECIAL_VERSIONS=('2.6' '3.2' '3.3')
+
+function find_get_pip_version() {
   local version="$1"
+
+  for v in "${SPECIAL_VERSIONS[@]}"
+  do
+    [[ "$version" == "$v" ]] && echo "$version" && return 0
+  done
+
+  return 1
+}
+
+function cat_get_pip() {
+  local version=$(find_get_pip_version "$1")
+
   local path="get-pip.py"
   [[ -n "$version" ]] && path="$version/$path"
   local src="$2"
