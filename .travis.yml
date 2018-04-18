@@ -32,6 +32,11 @@ env:
 - SCRIPT_SRC=local
 - SCRIPT_SRC=remote
 
+cache:
+  pip: true
+  directories:
+  - $HOME/.pre-commit
+
 install:
 - yes | pip uninstall setuptools pip
 
