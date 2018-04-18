@@ -1,5 +1,11 @@
 #! /usr/bin/env bash
 
+DEBUG=$DEBUG
+
+set -euo pipefail
+
+[[ -n "$DEBUG" ]] && set -xv
+
 declare -a SPECIAL_VERSIONS=('2.6' '3.2' '3.3')
 
 function find_get_pip_version() {
@@ -24,12 +30,14 @@ function cat_get_pip() {
   then
     path="https://bootstrap.pypa.io/$path"
     cmd='wget -O - '
+    >&2 echo Downloading bootstrap script from remote...
   elif [[ "$src" != "local" ]]
   then
     >&2 echo Wrong source argument: $src
     exit 1
   fi
 
+  >&2 echo Version $1 requires following script: $path
   $cmd $path
 }
 
