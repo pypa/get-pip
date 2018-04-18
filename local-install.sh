@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Exit on error, run verbose
-set -ev
+set -euvo pipefail
 
 # Run from a script to make sure Travis CI handles failures properly:
 # http://steven.casagrande.io/articles/travis-ci-and-if-statements/
