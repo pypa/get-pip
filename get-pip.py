@@ -31,6 +31,18 @@ import tempfile
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 
+
+PY_VERSION = sys.version_info[:2]
+
+if PY_VERSION in [(2, 6), (3, 2), (3, 3)]:
+    raise RuntimeError("""This script does not support Python {0}.{1}.
+
+Please install the legacy version:
+
+ $ curl https://bootstrap.pypa.io/{0}.{1}/get-pip.py | python{0}.{1}
+""".format(PY_VERSION[0], PY_VERSION[1]))
+
+
 if PY3:
     iterbytes = iter
 else:
