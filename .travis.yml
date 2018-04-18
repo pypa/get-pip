@@ -10,16 +10,17 @@ python:
  - "2.7"
  - "2.6"
 
+install:
+ - pip install flake8
+
 script:
  # Simple test runs
  - ./local-install.sh
  - ./curl-install.sh
 
-after_script:
- # Static analysis: for info, won't fail the build
+ # Static analysis
  - pip install pyflakes pycodestyle
- - pyflakes .
- - pycodestyle --statistics --count .
+ - flake8 .
 
 matrix:
   fast_finish: true
