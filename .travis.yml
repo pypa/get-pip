@@ -32,6 +32,9 @@ env:
 - SCRIPT_SRC=local
 - SCRIPT_SRC=remote
 
+install:
+- yes | pip uninstall setuptools pip
+
 script:
 - .travis/helpers.sh "$TRAVIS_PYTHON_VERSION" "$SCRIPT_SRC"
 
