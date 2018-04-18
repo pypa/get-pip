@@ -10,17 +10,22 @@ python:
  - "2.7"
  - "2.6"
 
+before_script:
+- source helpers.sh
+
 install:
- - pip install flake8
+- pip install flake8
 
 script:
- # Simple test runs
- - ./local-install.sh
- - ./curl-install.sh
+# Test install
+- cat_get_pip "$TRAVIS_PYTHON_VERSION" "$SCRIPT_SRC" | python -
 
- # Static analysis
- - pip install pyflakes pycodestyle
- - flake8 .
+# Static analysis
+- pip install pyflakes pycodestyle
+- flake8 .
 
 matrix:
   fast_finish: true
+  global:
+  - SCRIPT_SRC=local
+  - SCRIPT_SRC=remote
