@@ -15,7 +15,7 @@ env:
 - SCRIPT_SRC=remote
 
 before_script:
-- source helpers.sh
+- source .travis/helpers.sh
 
 install:
 - if [ $TRAVIS_PYTHON_VERSION == 3.6 ]; then pip install flake8; fi
