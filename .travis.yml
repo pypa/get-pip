@@ -14,15 +14,16 @@ before_script:
 - source helpers.sh
 
 install:
-- pip install flake8
+- if [ $TRAVIS_PYTHON_VERSION == 3.6 ]; then pip install flake8; fi
+
 
 script:
 # Test install
 - cat_get_pip "$TRAVIS_PYTHON_VERSION" "$SCRIPT_SRC" | python -
 
 # Static analysis
-- pip install pyflakes pycodestyle
-- flake8 .
+- if [ $TRAVIS_PYTHON_VERSION == 3.6 ]; then flake8 .; fi
+
 
 matrix:
   fast_finish: true
