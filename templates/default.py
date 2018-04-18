@@ -135,7 +135,7 @@ def bootstrap(tmpdir=None):
     for arg in args:
         try:
             req = InstallRequirement.from_line(arg)
-        except:
+        except Exception:
             continue
 
         if implicit_pip and req.name == "pip":
