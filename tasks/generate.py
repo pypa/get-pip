@@ -16,6 +16,18 @@ import packaging.version
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
+VERSION_CHECK = '''
+PY_VERSION = sys.version_info[:2]
+
+if PY_VERSION in [(2, 6), (3, 2), (3, 3)]:
+    raise RuntimeError("""This script does not support Python {0}.{1}.
+
+Please install the legacy version:
+
+ $ curl https://bootstrap.pypa.io/{0}.{1}/get-pip.py | python{0}.{1}
+""".format(PY_VERSION[0], PY_VERSION[1]))
+'''
+
 
 def _path(pyversion=None):
     parts = [PROJECT_ROOT, pyversion, "get-pip.py"]
@@ -29,7 +41,8 @@ def _template(name="default.py"):
 @invoke.task
 def installer(ctx,
               pip_version=None, wheel_version=None, setuptools_version=None,
-              installer_path=_path(), template_path=_template()):
+              installer_path=_path(), template_path=_template(),
+              version_check=""):
 
     print("[generate.installer] Generating installer {} (using {})".format(
         os.path.relpath(installer_path, PROJECT_ROOT),
@@ -105,6 +118,7 @@ def installer(ctx,
                     "" if setuptools_version is None else setuptools_version),
                 installed_version=latest,
                 zipfile="\n".join(chunked),
+                version_check=version_check,
             ),
         )
 
@@ -119,7 +133,7 @@ def installer(ctx,
 @invoke.task(
     default=True,
     pre=[
-        invoke.call(installer),
+        invoke.call(installer, version_check=VERSION_CHECK),
         invoke.call(installer, installer_path=_path("2.6"),
                     template_path=_template("pre-10.py"),
                     pip_version="<10",

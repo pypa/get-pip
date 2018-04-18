@@ -31,6 +31,8 @@ import tempfile
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 
+{version_check}
+
 if PY3:
     iterbytes = iter
 else:
