@@ -17,9 +17,12 @@ env:
 script:
 - .travis/helpers.sh "$TRAVIS_PYTHON_VERSION" "$SCRIPT_SRC"
 
-# Static analysis
-- if [ $TRAVIS_PYTHON_VERSION == 3.6 ]; then flake8 .; fi
-
-
-matrix:
+jobs:
   fast_finish: true
+  include:
+  - stage: Linters
+    python: 3.6
+    install:
+    - pip install flake8
+    script:
+    - flake8 .
