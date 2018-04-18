@@ -14,16 +14,8 @@ env:
 - SCRIPT_SRC=local
 - SCRIPT_SRC=remote
 
-before_script:
-- source .travis/helpers.sh
-
-install:
-- if [ $TRAVIS_PYTHON_VERSION == 3.6 ]; then pip install flake8; fi
-
-
 script:
-# Test install
-- cat_get_pip "$TRAVIS_PYTHON_VERSION" "$SCRIPT_SRC" | python -
+- .travis/helpers.sh "$TRAVIS_PYTHON_VERSION" "$SCRIPT_SRC"
 
 # Static analysis
 - if [ $TRAVIS_PYTHON_VERSION == 3.6 ]; then flake8 .; fi

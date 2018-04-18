@@ -32,3 +32,14 @@ function cat_get_pip() {
 
   $cmd $path
 }
+
+function main() {
+  local python_version="$1"
+  local get_pip_src="$2"
+  cat_get_pip "$python_version" "$get_pip_src" | python -
+}
+
+# Reset settings
+set +eu
+
+main $*
