@@ -35,6 +35,9 @@ env:
 script:
 - .travis/helpers.sh "$TRAVIS_PYTHON_VERSION" "$SCRIPT_SRC"
 
+after_failure:
+- env
+
 jobs:
   fast_finish: true
   allow_failures:
