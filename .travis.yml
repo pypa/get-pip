@@ -10,6 +10,16 @@ python:
 - "2.7"
 - "2.6"
 
+.helpers:
+- &reset_steps
+  env: []
+  before_script: []
+  install: skip
+  script: []
+
+# Reset defaults:
+<<: *reset_steps
+
 env:
 - SCRIPT_SRC=local
 - SCRIPT_SRC=remote
@@ -22,7 +32,9 @@ jobs:
   include:
   - stage: Linters
     python: 3.6
+    env: []
     install:
     - pip install flake8
+    before_script: []
     script:
     - flake8 .
