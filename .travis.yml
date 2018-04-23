@@ -10,32 +10,12 @@ python:
 - "2.7"
 - "2.6"
 
-.helpers:
-- &reset_steps
-  env: []
-  before_script: []
-  install: skip
-  script: []
-- &linter_base
-  stage: Linters
-  <<: *reset_steps
-  python: 3.6
-- &pre_commit_linter_base
-  <<: *linter_base
-  install:
-  - pip install pre-commit
-
-# Reset defaults:
-<<: *reset_steps
-
 env:
 - SCRIPT_SRC=local
 - SCRIPT_SRC=remote
 
 cache:
   pip: true
-  directories:
-  - $HOME/.pre-commit
 
 install:
 - yes | pip uninstall setuptools pip
@@ -44,20 +24,5 @@ script:
 - .travis/helpers.sh "$TRAVIS_PYTHON_VERSION" "$SCRIPT_SRC"
 - pip -V
 
-after_failure:
-- env
-
 jobs:
   fast_finish: true
-  allow_failures:
-  - env:
-    - ALLOW_FAILURE=true
-  include:
-  - <<: *pre_commit_linter_base
-    script:
-    - pre-commit run --all-files
-  - <<: *pre_commit_linter_base
-    env:
-    - ALLOW_FAILURE=true
-    script:
-    - pre-commit run --config .pre-commit-config.yaml.failing --all-files
