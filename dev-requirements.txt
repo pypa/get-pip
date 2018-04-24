@@ -1,0 +1,3 @@
+pytest
+virtualenv
+scripttest
