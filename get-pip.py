@@ -29,7 +29,11 @@ import tempfile
 
 # Check for wrong embedded python settings
 if 'site' not in sys.modules:
-    print('site package is not loaded by default. Please edit python%d%d._pth' % (sys.version_info[0], sys.version_info[1]))
+    print(
+        'site package is not loaded by default.',
+        'Please edit the python%d%d._pth' % sys.version_info[:2],
+        file=sys.stderr,
+    )
 
     # Initialize site package manually
     import site
