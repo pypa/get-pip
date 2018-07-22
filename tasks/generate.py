@@ -131,6 +131,7 @@ def installer(ctx,
                     wheel_version="<0.30",
                     setuptools_version="<30"),
         invoke.call(installer, installer_path=_path("3.3"),
+                    pip_version="<18",
                     wheel_version="<0.30"),
     ],
 )
