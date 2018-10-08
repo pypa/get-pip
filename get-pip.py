@@ -81,7 +81,7 @@ def bootstrap(tmpdir=None):
     # Import pip so we can use it to install pip and maybe setuptools too
     import pip._internal
     from pip._internal.commands.install import InstallCommand
-    from pip._internal.req import InstallRequirement
+    from pip._internal.req.constructors import install_req_from_line
 
     # Wrapper to provide default certificate with the lowest priority
     class CertInstallCommand(InstallCommand):
@@ -134,7 +134,7 @@ def bootstrap(tmpdir=None):
     # install of them.
     for arg in args:
         try:
-            req = InstallRequirement.from_line(arg)
+            req = install_req_from_line(arg)
         except Exception:
             continue
 
