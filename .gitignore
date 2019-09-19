@@ -1,1 +1,3 @@
-venv
+/.nox/
+/venv/
+__pycache__/
