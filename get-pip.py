@@ -79,22 +79,23 @@ except ImportError:
 
 def bootstrap(tmpdir=None):
     # Import pip so we can use it to install pip and maybe setuptools too
-    import pip._internal
+    import pip._internal.main
     from pip._internal.commands.install import InstallCommand
     from pip._internal.req.constructors import install_req_from_line
 
     # Wrapper to provide default certificate with the lowest priority
-    class CertInstallCommand(InstallCommand):
-        def parse_args(self, args):
-            # If cert isn't specified in config or environment, we provide our
-            # own certificate through defaults.
-            # This allows user to specify custom cert anywhere one likes:
-            # config, environment variable or argv.
-            if not self.parser.get_default_values().cert:
-                self.parser.defaults["cert"] = cert_path  # calculated below
-            return super(CertInstallCommand, self).parse_args(args)
-
-    pip._internal.commands_dict["install"] = CertInstallCommand
+    # Due to pip._internal.commands.commands_dict structure, a monkeypatch
+    # seems the simplest workaround.
+    install_parse_args = InstallCommand.parse_args
+    def cert_parse_args(self, args):
+        # If cert isn't specified in config or environment, we provide our
+        # own certificate through defaults.
+        # This allows user to specify custom cert anywhere one likes:
+        # config, environment variable or argv.
+        if not self.parser.get_default_values().cert:
+            self.parser.defaults["cert"] = cert_path  # calculated below
+        return install_parse_args(self, args)
+    InstallCommand.parse_args = cert_parse_args
 
     implicit_pip = True
     implicit_setuptools = True
@@ -172,7 +173,7 @@ def bootstrap(tmpdir=None):
 
         # Execute the included pip and use it to install the latest pip and
         # setuptools from PyPI
-        sys.exit(pip._internal.main(args))
+        sys.exit(pip._internal.main.main(args))
     finally:
         # Remove our temporary directory
         if delete_tmpdir and tmpdir:
