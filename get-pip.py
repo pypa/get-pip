@@ -79,7 +79,7 @@ except ImportError:
 
 def bootstrap(tmpdir=None):
     # Import pip so we can use it to install pip and maybe setuptools too
-    import pip._internal.main
+    from pip._internal.cli.main import main as pip_entry_point
     from pip._internal.commands.install import InstallCommand
     from pip._internal.req.constructors import install_req_from_line
 
@@ -173,7 +173,7 @@ def bootstrap(tmpdir=None):
 
         # Execute the included pip and use it to install the latest pip and
         # setuptools from PyPI
-        sys.exit(pip._internal.main.main(args))
+        sys.exit(pip_entry_point(args))
     finally:
         # Remove our temporary directory
         if delete_tmpdir and tmpdir:
