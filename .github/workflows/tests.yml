@@ -6,7 +6,7 @@ on:
 
 jobs:
   tests:
-    name: Tests
+    name: ${{ matrix.os }} / ${{ matrix.python }}
     runs-on: ${{ matrix.os }}-latest
     strategy:
       matrix:
