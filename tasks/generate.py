@@ -19,7 +19,7 @@ PROJECT_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 VERSION_CHECK = '''
 PY_VERSION = sys.version_info[:2]
 
-if PY_VERSION in [(2, 6), (3, 2), (3, 3)]:
+if PY_VERSION in [(2, 6), (3, 2), (3, 3), (3, 4)]:
     raise RuntimeError("""This script does not support Python {0}.{1}.
 
 Please install the legacy version:
