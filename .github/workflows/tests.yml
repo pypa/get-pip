@@ -11,9 +11,7 @@ jobs:
     strategy:
       matrix:
         os: [Ubuntu, Windows]
-        env:
-        - PYTHON_VERSION: 2.7
-        - PYTHON_VERSION: 3.7
+        python: [2.7, 3.7]
     steps:
     - uses: actions/checkout@master
       # Nox runner
@@ -21,11 +19,11 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
-    - name: Set up Python ${{ matrix.env.PYTHON_VERSION }}
-      if: matrix.env.PYTHON_VERSION != '3.7'
+    - name: Set up Python ${{ matrix.python }}
+      if: matrix.python != '3.7'
       uses: actions/setup-python@v1
       with:
-        python-version: ${{ matrix.env.PYTHON_VERSION }}
+        python-version: ${{ matrix.python }}
     - name: Install nox (Unix)
       run: python3.7 -m pip install nox
       if: matrix.os != 'Windows'
@@ -35,6 +33,6 @@ jobs:
     - name: Workaround for Windows Python 2.7
       # This is in PATH, so nox resolves to it - but then subsequent steps fail
       run: rm C:/ProgramData/Chocolatey/bin/python2.7.exe
-      if: matrix.os == 'Windows' && matrix.env.PYTHON_VERSION == '2.7'
+      if: matrix.os == 'Windows' && matrix.python == '2.7'
     - name: Run tests
-      run: nox -s tests-${{ matrix.env.PYTHON_VERSION }}
+      run: nox -s tests-${{ matrix.python }}
