@@ -10,9 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
     strategy:
       matrix:
-        os:
-        - Ubuntu
-        - Windows
+        os: [Ubuntu, Windows]
         env:
         - PYTHON_VERSION: 2.7
         - PYTHON_VERSION: 3.7
