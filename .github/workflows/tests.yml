@@ -19,17 +19,13 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
+    - name: Install nox
+      run: python -m pip install nox
     - name: Set up Python ${{ matrix.python }}
       if: matrix.python != '3.7'
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python }}
-    - name: Install nox (Unix)
-      run: python3.7 -m pip install nox
-      if: matrix.os != 'Windows'
-    - name: Install nox (Windows)
-      run: py -3.7 -m pip install nox
-      if: matrix.os == 'Windows'
     - name: Workaround for Windows Python 2.7
       # This is in PATH, so nox resolves to it - but then subsequent steps fail
       run: rm C:/ProgramData/Chocolatey/bin/python2.7.exe
