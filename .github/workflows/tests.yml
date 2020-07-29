@@ -14,9 +14,10 @@ jobs:
         python: ['2.7', '3.7']
     steps:
     - uses: actions/checkout@master
-      # Nox runner
+
     - uses: actions/setup-python@v2
     - run: pip install nox
+
     - uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python }}
@@ -24,4 +25,5 @@ jobs:
       # This is in PATH, so nox resolves to it - but then subsequent steps fail
       run: rm C:/ProgramData/Chocolatey/bin/python2.7.exe
       if: matrix.os == 'Windows' && matrix.python == '2.7'
+
     - run: nox -s tests-${{ matrix.python }}
