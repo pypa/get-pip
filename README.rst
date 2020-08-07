@@ -60,6 +60,6 @@ Code of Conduct
 ---------------
 
 Everyone interacting in the get-pip project's codebases, issue trackers, chat
-rooms, and mailing lists is expected to follow the `PyPA Code of Conduct`_.
+rooms, and mailing lists is expected to follow the `PSF Code of Conduct`_.
 
-.. _PyPA Code of Conduct: https://www.pypa.io/en/latest/code-of-conduct/
+.. _PSF Code of Conduct: https://github.com/pypa/.github/blob/main/CODE_OF_CONDUCT.md
