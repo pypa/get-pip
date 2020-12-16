@@ -27,3 +27,18 @@ jobs:
       if: matrix.os == 'Windows' && matrix.python == '2.7'
 
     - run: nox -s tests-${{ matrix.python }}
+
+  flake8-annotation-python2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Flake8 with annotations - Python 2
+        uses: peternewman/actions-flake8@python2
+
+  flake8-annotation-python3:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Flake8 with annotations - Python 3
+        uses: TrueBrain/actions-flake8@master
+
