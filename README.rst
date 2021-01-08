@@ -12,12 +12,33 @@ Usage
 
 .. code-block:: console
 
-    $ # Install the latest version of pip
-    $ curl https://bootstrap.pypa.io/get-pip.py | python
-    $ # Install the latest version of pip, supported by a legacy Python
-    $ curl https://bootstrap.pypa.io/3.2/get-pip.py | python3.2
-    $ # Install a specific version of pip
-    $ curl https://bootstrap.pypa.io/get-pip.py | python - 'pip==8.0.0'
+    $ curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+    $ python get-pip.py
+
+Upon execution, ``get-pip.py`` will install ``pip``, ``setuptools`` and
+``wheel`` in the current Python environment.
+
+It is possible to provide additional arguments to the underlying script. These
+are passed through to the underlying `pip install` command, and can thus be
+used to constraint the versions of the packages, or to pass other pip options
+such as ``--no-index``.
+
+.. code-block:: console
+
+    $ python get-pip.py "pip < 21.0" "setuptools < 50.0" "wheel < 1.0"
+    $ python get-pip.py --no-index --find-links=/local/copies
+
+get-pip.py options
+^^^^^^^^^^^^^^^^^^
+
+This script also has it's own options, which control which packages it will
+install.
+
+``--no-setuptools``
+    If set, do not attempt to install ``setuptools``.
+
+``--no-wheel``
+    If set, do not attempt to install ``wheel``.
 
 
 Development
