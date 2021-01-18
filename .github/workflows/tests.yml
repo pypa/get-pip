@@ -29,16 +29,11 @@ jobs:
     - run: nox -s tests-${{ matrix.python }}
 
   pre-commit:
-    name: Pre-Commit Python ${{ matrix.python }}
+    name: Pre-Commit
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python: ['2.7', '3.7']
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python }}
     - name: Setup flake8 annotations
       uses: rbialon/flake8-annotations@v1
     - uses: pre-commit/action@v2.0.0
