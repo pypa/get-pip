@@ -7,6 +7,34 @@ import nox
 nox.options.sessions = ["check", "generate"]
 
 
+# Keep versions in sync with .github/workflows/check.yml
+@nox.session(
+    python=["2.6", "2.7", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9"]
+)
+def check(session):
+    """Ensure that get-pip.py for various Python versions, works on that version."""
+
+    # Find the appropriate get-pip.py file
+    public = Path(".")
+    locations = [
+        public / session.python / "get-pip.py",
+        public / "get-pip.py",
+    ]
+    for location in locations:
+        if location.exists():
+            break
+    else:  # AKA nobreak
+        raise RuntimeError("There is no public get-pip.py")
+
+    # Get rid of provided-by-nox pip
+    session.run("python", "-m", "pip", "uninstall", "pip", "--yes")
+    # Run the get-pip.py file
+    session.run("python", str(location))
+    # Ensure that pip is installed
+    session.run("python", "-m", "pip", "--version")
+    session.run("pip", "--version")
+
+
 @nox.session
 def generate(session):
     """Update the scripts, to the latest versions."""
