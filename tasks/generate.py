@@ -141,6 +141,9 @@ def installer(ctx,
         invoke.call(installer, installer_path=_path("3.4"),
                     template_path=_template("pre-19.3.py"),
                     pip_version="<19.2"),
+        invoke.call(installer, installer_path=_path("3.5"),
+                    template_path=_template("pre-21.0.py"),
+                    pip_version="<21.0"),
     ],
 )
 def all(ctx):
