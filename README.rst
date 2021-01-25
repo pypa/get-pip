@@ -27,6 +27,15 @@ such as ``--no-index``.
 
     $ python get-pip.py "pip < 21.0" "setuptools < 50.0" "wheel < 1.0"
     $ python get-pip.py --no-index --find-links=/local/copies
+    
+You can even download versions of get-pip which target legacy python versions. 
+For instance, if you want to run get-pip.py in a python2.7 environment, you can
+use:
+
+.. code-block:: console
+
+    $ curl -sSL https://bootstrap.pypa.io/2.7/get-pip.py -o get-pip.py
+    $ python get-pip.py "pip < 21.0"
 
 get-pip.py options
 ^^^^^^^^^^^^^^^^^^
