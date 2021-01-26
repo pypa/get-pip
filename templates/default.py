@@ -34,8 +34,9 @@ PY3 = sys.version_info[0] == 3
 if PY3:
     iterbytes = iter
 else:
-    def iterbytes(buf):
-        return (ord(byte) for byte in buf)
+    print("Python 2 is not supported with this version of get-pip.py. "
+          "Please use https://bootstrap.pypa.io/2.7/get-pip.py")
+    sys.exit(1)
 
 try:
     from base64 import b85decode
