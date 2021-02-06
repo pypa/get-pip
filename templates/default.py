@@ -71,7 +71,7 @@ def determine_pip_install_arguments():
     return ["install", "--upgrade", "--force-reinstall"] + args
 
 
-def bootstrap(tmpdir=None):
+def bootstrap(tmpdir):
     # Import pip so we can use it to install pip and maybe setuptools too
     from pip._internal.cli.main import main as pip_entry_point
     from pip._internal.commands.install import InstallCommand
@@ -92,27 +92,15 @@ def bootstrap(tmpdir=None):
     InstallCommand.parse_args = cert_parse_args
 
     args = determine_pip_install_arguments()
-    delete_tmpdir = False
-    try:
-        # Create a temporary directory to act as a working directory if we were
-        # not given one.
-        if tmpdir is None:
-            tmpdir = tempfile.mkdtemp()
-            delete_tmpdir = True
+    # We need to extract the SSL certificates from requests so that they
+    # can be passed to --cert
+    cert_path = os.path.join(tmpdir, "cacert.pem")
+    with open(cert_path, "wb") as cert:
+        cert.write(pkgutil.get_data("pip._vendor.certifi", "cacert.pem"))
 
-        # We need to extract the SSL certificates from requests so that they
-        # can be passed to --cert
-        cert_path = os.path.join(tmpdir, "cacert.pem")
-        with open(cert_path, "wb") as cert:
-            cert.write(pkgutil.get_data("pip._vendor.certifi", "cacert.pem"))
-
-        # Execute the included pip and use it to install the latest pip and
-        # setuptools from PyPI
-        sys.exit(pip_entry_point(args))
-    finally:
-        # Remove our temporary directory
-        if delete_tmpdir and tmpdir:
-            shutil.rmtree(tmpdir, ignore_errors=True)
+    # Execute the included pip and use it to install the latest pip and
+    # setuptools from PyPI
+    sys.exit(pip_entry_point(args))
 
 
 def main():
