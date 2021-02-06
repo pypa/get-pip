@@ -71,35 +71,40 @@ def determine_pip_install_arguments():
     return ["install", "--upgrade", "--force-reinstall"] + args
 
 
-def bootstrap(tmpdir):
-    # Import pip so we can use it to install pip and maybe setuptools too
-    from pip._internal.cli.main import main as pip_entry_point
+def monkeypatch_for_cert(tmpdir):
+    """Patches `pip install` to provide default certificate with the lowest priority.
+
+    This ensures that the bundled certificates are used unless the user specifies a
+    custom cert via any of pip's option passing mechanisms (config, env-var, CLI).
+
+    A monkeypatch is the easiest way to achieve this, without messing too much with
+    the rest of pip's internals.
+    """
     from pip._internal.commands.install import InstallCommand
 
-    # Wrapper to provide default certificate with the lowest priority
-    # Due to pip._internal.commands.commands_dict structure, a monkeypatch
-    # seems the simplest workaround.
-    install_parse_args = InstallCommand.parse_args
-
-    def cert_parse_args(self, args):
-        # If cert isn't specified in config or environment, we provide our
-        # own certificate through defaults.
-        # This allows user to specify custom cert anywhere one likes:
-        # config, environment variable or argv.
-        if not self.parser.get_default_values().cert:
-            self.parser.defaults["cert"] = cert_path  # calculated below
-        return install_parse_args(self, args)
-    InstallCommand.parse_args = cert_parse_args
-
-    args = determine_pip_install_arguments()
-    # We need to extract the SSL certificates from requests so that they
-    # can be passed to --cert
+    # We want to be using the internal certificates.
     cert_path = os.path.join(tmpdir, "cacert.pem")
     with open(cert_path, "wb") as cert:
         cert.write(pkgutil.get_data("pip._vendor.certifi", "cacert.pem"))
 
+    install_parse_args = InstallCommand.parse_args
+
+    def cert_parse_args(self, args):
+        if not self.parser.get_default_values().cert:
+            # There are no user provided cert -- force use of bundled cert
+            self.parser.defaults["cert"] = cert_path  # calculated above
+        return install_parse_args(self, args)
+
+    InstallCommand.parse_args = cert_parse_args
+
+
+def bootstrap(tmpdir):
+    monkeypatch_for_cert(tmpdir)
+
     # Execute the included pip and use it to install the latest pip and
     # setuptools from PyPI
+    from pip._internal.cli.main import main as pip_entry_point
+    args = determine_pip_install_arguments()
     sys.exit(pip_entry_point(args))
 
 
