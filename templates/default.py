@@ -32,7 +32,6 @@ def bootstrap(tmpdir=None):
     # Import pip so we can use it to install pip and maybe setuptools too
     from pip._internal.cli.main import main as pip_entry_point
     from pip._internal.commands.install import InstallCommand
-    from pip._internal.req.constructors import install_req_from_line
 
     # Wrapper to provide default certificate with the lowest priority
     # Due to pip._internal.commands.commands_dict structure, a monkeypatch
@@ -79,24 +78,6 @@ def bootstrap(tmpdir=None):
             implicit_wheel = False
         except ImportError:
             pass
-
-    # We want to support people passing things like 'pip<8' to get-pip.py which
-    # will let them install a specific version. However because of the dreaded
-    # DoubleRequirement error if any of the args look like they might be a
-    # specific for one of our packages, then we'll turn off the implicit
-    # install of them.
-    for arg in args:
-        try:
-            req = install_req_from_line(arg)
-        except Exception:
-            continue
-
-        if implicit_pip and req.name == "pip":
-            implicit_pip = False
-        elif implicit_setuptools and req.name == "setuptools":
-            implicit_setuptools = False
-        elif implicit_wheel and req.name == "wheel":
-            implicit_wheel = False
 
     # Add any implicit installations to the end of our args
     if implicit_pip:
