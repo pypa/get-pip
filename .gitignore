@@ -1,3 +1,4 @@
 /.nox/
 /venv/
 __pycache__/
+.web_cache/
