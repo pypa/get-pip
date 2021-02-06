@@ -28,26 +28,7 @@ import tempfile
 from base64 import b85decode
 
 
-def bootstrap(tmpdir=None):
-    # Import pip so we can use it to install pip and maybe setuptools too
-    from pip._internal.cli.main import main as pip_entry_point
-    from pip._internal.commands.install import InstallCommand
-
-    # Wrapper to provide default certificate with the lowest priority
-    # Due to pip._internal.commands.commands_dict structure, a monkeypatch
-    # seems the simplest workaround.
-    install_parse_args = InstallCommand.parse_args
-
-    def cert_parse_args(self, args):
-        # If cert isn't specified in config or environment, we provide our
-        # own certificate through defaults.
-        # This allows user to specify custom cert anywhere one likes:
-        # config, environment variable or argv.
-        if not self.parser.get_default_values().cert:
-            self.parser.defaults["cert"] = cert_path  # calculated below
-        return install_parse_args(self, args)
-    InstallCommand.parse_args = cert_parse_args
-
+def determine_pip_install_arguments():
     implicit_pip = True
     implicit_setuptools = True
     implicit_wheel = True
@@ -87,9 +68,30 @@ def bootstrap(tmpdir=None):
     if implicit_wheel:
         args += ["wheel{wheel_version}"]
 
-    # Add our default arguments
-    args = ["install", "--upgrade", "--force-reinstall"] + args
+    return ["install", "--upgrade", "--force-reinstall"] + args
 
+
+def bootstrap(tmpdir=None):
+    # Import pip so we can use it to install pip and maybe setuptools too
+    from pip._internal.cli.main import main as pip_entry_point
+    from pip._internal.commands.install import InstallCommand
+
+    # Wrapper to provide default certificate with the lowest priority
+    # Due to pip._internal.commands.commands_dict structure, a monkeypatch
+    # seems the simplest workaround.
+    install_parse_args = InstallCommand.parse_args
+
+    def cert_parse_args(self, args):
+        # If cert isn't specified in config or environment, we provide our
+        # own certificate through defaults.
+        # This allows user to specify custom cert anywhere one likes:
+        # config, environment variable or argv.
+        if not self.parser.get_default_values().cert:
+            self.parser.defaults["cert"] = cert_path  # calculated below
+        return install_parse_args(self, args)
+    InstallCommand.parse_args = cert_parse_args
+
+    args = determine_pip_install_arguments()
     delete_tmpdir = False
     try:
         # Create a temporary directory to act as a working directory if we were
