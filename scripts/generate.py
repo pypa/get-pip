@@ -169,8 +169,8 @@ def encode_wheel_contents(data: bytes) -> str:
     return "\n".join(chunked)
 
 
-def determine_destination(version: str) -> Path:
-    public = Path(".")
+def determine_destination(base: str, version: str) -> Path:
+    public = Path(base)
     if not public.exists():
         public.mkdir()
 
@@ -190,7 +190,8 @@ def main() -> None:
 
     for version, mapping in populated_script_constraints(SCRIPT_CONSTRAINTS):
         print(f"Working on {version}")
-        destination = determine_destination(version)
+        destination = determine_destination("public", version)
+        legacy_destination = determine_destination(".", version)
         pip_version = determine_latest(
             pip_versions.keys(),
             constraint=mapping["pip"],
@@ -215,6 +216,7 @@ def main() -> None:
 
         print(f"  Writing to {destination}")
         destination.write_text(rendered_template)
+        legacy_destination.write_text(rendered_template)
 
 
 if __name__ == "__main__":
