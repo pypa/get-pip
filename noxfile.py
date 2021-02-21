@@ -54,7 +54,7 @@ def update_for_release(session):
     if len(session.posargs) != 1:
         session.error("Usage: nox -s update-for-release -- <released-pip-version>")
 
-    release_version, = session.posargs
+    (release_version,) = session.posargs
 
     session.install("release-helper")
     session.run("release-helper", "version-check-validity", release_version)
@@ -68,21 +68,21 @@ def update_for_release(session):
 
     # Make the commit and present it to the user.
     session.run("git", "add", ".", external=True)
-    session.run(
-        "git", "commit", "-m", f"Update to {release_version}", external=True
-    )
+    session.run("git", "commit", "-m", f"Update to {release_version}", external=True)
     session.run("git", "show", "HEAD", "--stat")
 
-    input(textwrap.dedent(
-        """\
-        **********************************************
-        * IMPORTANT: Check which files got modified. *
-        **********************************************
+    input(
+        textwrap.dedent(
+            """\
+            **********************************************
+            * IMPORTANT: Check which files got modified. *
+            **********************************************
 
-        Press enter to continue. This script will generate a signed tag for this
-        commit and push it -- which will publish these changes.
-        """
-    ))
+            Press enter to continue. This script will generate a signed tag for this
+            commit and push it -- which will publish these changes.
+            """
+        )
+    )
 
     session.run(
         # fmt: off
