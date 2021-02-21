@@ -15,7 +15,7 @@ def check(session):
     """Ensure that get-pip.py for various Python versions, works on that version."""
 
     # Find the appropriate get-pip.py file
-    public = Path(".")
+    public = Path("public")
     locations = [
         public / session.python / "get-pip.py",
         public / "get-pip.py",
