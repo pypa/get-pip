@@ -1,10 +1,7 @@
 """Update all the get-pip.py scripts."""
 
-import hashlib
 import operator
 import re
-import subprocess
-import sys
 from base64 import b85encode
 from functools import lru_cache
 from io import BytesIO
