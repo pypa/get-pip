@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #
 # Hi There!
+#
 # You may be wondering what this giant blob of binary data here is, you might
 # even be worried that we're up to something nefarious (good for you for being
 # paranoid!). This is a base85 encoding of a zip file, this zip file contains
@@ -16,88 +17,31 @@
 # doesn't do things correctly and has weird edge cases, or compress pip itself
 # down into a single file.
 #
-# If you're wondering how this is created, it is using an invoke task located
-# in tasks/generate.py called "installer". It can be invoked by using
-# ``invoke generate.installer``.
+# If you're wondering how this is created, it is generated using
+# `scripts/generate.py` in https://github.com/pypa/get-pip.
+
+import sys
+
+this_python = sys.version_info[:2]
+min_version = {minimum_supported_version}
+if this_python < min_version:
+    message_parts = [
+        "This script does not work on Python {{}}.{{}}".format(*this_python),
+        "The minimum supported Python version is {{}}.{{}}.".format(*min_version),
+        "Please use https://bootstrap.pypa.io/{{}}.{{}}/get-pip.py instead.".format(*this_python),
+    ]
+    print("ERROR: " + " ".join(message_parts))
+    sys.exit(1)
+
 
 import os.path
 import pkgutil
 import shutil
-import sys
-import struct
 import tempfile
-
-# Useful for very coarse version differentiation.
-PY2 = sys.version_info[0] == 2
-PY3 = sys.version_info[0] == 3
-
-if PY3:
-    iterbytes = iter
-else:
-    def iterbytes(buf):
-        return (ord(byte) for byte in buf)
-
-try:
-    from base64 import b85decode
-except ImportError:
-    _b85alphabet = (b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                    b"abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{{|}}~")
-
-    def b85decode(b):
-        _b85dec = [None] * 256
-        for i, c in enumerate(iterbytes(_b85alphabet)):
-            _b85dec[c] = i
-
-        padding = (-len(b)) % 5
-        b = b + b'~' * padding
-        out = []
-        packI = struct.Struct('!I').pack
-        for i in range(0, len(b), 5):
-            chunk = b[i:i + 5]
-            acc = 0
-            try:
-                for c in iterbytes(chunk):
-                    acc = acc * 85 + _b85dec[c]
-            except TypeError:
-                for j, c in enumerate(iterbytes(chunk)):
-                    if _b85dec[c] is None:
-                        raise ValueError(
-                            'bad base85 character at position %d' % (i + j)
-                        )
-                raise
-            try:
-                out.append(packI(acc))
-            except struct.error:
-                raise ValueError('base85 overflow in hunk starting at byte %d'
-                                 % i)
-
-        result = b''.join(out)
-        if padding:
-            result = result[:-padding]
-        return result
+from base64 import b85decode
 
 
-def bootstrap(tmpdir=None):
-    # Import pip so we can use it to install pip and maybe setuptools too
-    from pip._internal.cli.main import main as pip_entry_point
-    from pip._internal.commands.install import InstallCommand
-    from pip._internal.req.constructors import install_req_from_line
-
-    # Wrapper to provide default certificate with the lowest priority
-    # Due to pip._internal.commands.commands_dict structure, a monkeypatch
-    # seems the simplest workaround.
-    install_parse_args = InstallCommand.parse_args
-
-    def cert_parse_args(self, args):
-        # If cert isn't specified in config or environment, we provide our
-        # own certificate through defaults.
-        # This allows user to specify custom cert anywhere one likes:
-        # config, environment variable or argv.
-        if not self.parser.get_default_values().cert:
-            self.parser.defaults["cert"] = cert_path  # calculated below
-        return install_parse_args(self, args)
-    InstallCommand.parse_args = cert_parse_args
-
+def determine_pip_install_arguments():
     implicit_pip = True
     implicit_setuptools = True
     implicit_wheel = True
@@ -129,24 +73,6 @@ def bootstrap(tmpdir=None):
         except ImportError:
             pass
 
-    # We want to support people passing things like 'pip<8' to get-pip.py which
-    # will let them install a specific version. However because of the dreaded
-    # DoubleRequirement error if any of the args look like they might be a
-    # specific for one of our packages, then we'll turn off the implicit
-    # install of them.
-    for arg in args:
-        try:
-            req = install_req_from_line(arg)
-        except Exception:
-            continue
-
-        if implicit_pip and req.name == "pip":
-            implicit_pip = False
-        elif implicit_setuptools and req.name == "setuptools":
-            implicit_setuptools = False
-        elif implicit_wheel and req.name == "wheel":
-            implicit_wheel = False
-
     # Add any implicit installations to the end of our args
     if implicit_pip:
         args += ["pip{pip_version}"]
@@ -155,30 +81,44 @@ def bootstrap(tmpdir=None):
     if implicit_wheel:
         args += ["wheel{wheel_version}"]
 
-    # Add our default arguments
-    args = ["install", "--upgrade", "--force-reinstall"] + args
+    return ["install", "--upgrade", "--force-reinstall"] + args
 
-    delete_tmpdir = False
-    try:
-        # Create a temporary directory to act as a working directory if we were
-        # not given one.
-        if tmpdir is None:
-            tmpdir = tempfile.mkdtemp()
-            delete_tmpdir = True
 
-        # We need to extract the SSL certificates from requests so that they
-        # can be passed to --cert
-        cert_path = os.path.join(tmpdir, "cacert.pem")
-        with open(cert_path, "wb") as cert:
-            cert.write(pkgutil.get_data("pip._vendor.certifi", "cacert.pem"))
+def monkeypatch_for_cert(tmpdir):
+    """Patches `pip install` to provide default certificate with the lowest priority.
 
-        # Execute the included pip and use it to install the latest pip and
-        # setuptools from PyPI
-        sys.exit(pip_entry_point(args))
-    finally:
-        # Remove our temporary directory
-        if delete_tmpdir and tmpdir:
-            shutil.rmtree(tmpdir, ignore_errors=True)
+    This ensures that the bundled certificates are used unless the user specifies a
+    custom cert via any of pip's option passing mechanisms (config, env-var, CLI).
+
+    A monkeypatch is the easiest way to achieve this, without messing too much with
+    the rest of pip's internals.
+    """
+    from pip._internal.commands.install import InstallCommand
+
+    # We want to be using the internal certificates.
+    cert_path = os.path.join(tmpdir, "cacert.pem")
+    with open(cert_path, "wb") as cert:
+        cert.write(pkgutil.get_data("pip._vendor.certifi", "cacert.pem"))
+
+    install_parse_args = InstallCommand.parse_args
+
+    def cert_parse_args(self, args):
+        if not self.parser.get_default_values().cert:
+            # There are no user provided cert -- force use of bundled cert
+            self.parser.defaults["cert"] = cert_path  # calculated above
+        return install_parse_args(self, args)
+
+    InstallCommand.parse_args = cert_parse_args
+
+
+def bootstrap(tmpdir):
+    monkeypatch_for_cert(tmpdir)
+
+    # Execute the included pip and use it to install the latest pip and
+    # setuptools from PyPI
+    from pip._internal.cli.main import main as pip_entry_point
+    args = determine_pip_install_arguments()
+    sys.exit(pip_entry_point(args))
 
 
 def main():

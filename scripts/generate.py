@@ -1,10 +1,8 @@
 """Update all the get-pip.py scripts."""
 
-import hashlib
+import itertools
 import operator
 import re
-import subprocess
-import sys
 from base64 import b85encode
 from functools import lru_cache
 from io import BytesIO
@@ -123,6 +121,31 @@ def download_wheel(url: str, expected_md5: str) -> bytes:
     return response.content
 
 
+def populated_script_constraints(original_constraints):
+    """Yields the original constraints, with `minimum_supported_version` added.
+
+    For `M.N/get-pip.py`, it would be "(M, N)".
+
+    For the "default" get-pip.py, it would be "(M, N+1)" where M.N is the
+    highest version in the rest of the mapping.
+
+    Also, the yield order is defined as "default" and then versions in
+    increasing order.
+    """
+    versions = sorted(set(original_constraints) - {"default"})
+    for key in itertools.chain({"default"}, versions):
+        if key == "default":
+            major, minor = map(int, versions[-1].split("."))
+            minor += 1
+        else:
+            major, minor = map(int, key.split("."))
+
+        value = original_constraints[key].copy()
+        value["minimum_supported_version"] = f"({major}, {minor})"
+
+        yield key, value
+
+
 def repack_wheel(data: bytes):
     """Remove the .dist-info, so that this is no longer a valid wheel."""
     new_data = BytesIO()
@@ -165,7 +188,7 @@ def main() -> None:
     print("Fetch available pip versions...")
     pip_versions = get_all_pip_versions()
 
-    for version, mapping in SCRIPT_CONSTRAINTS.items():
+    for version, mapping in populated_script_constraints(SCRIPT_CONSTRAINTS):
         print(f"Working on {version}")
         destination = determine_destination(version)
         pip_version = determine_latest(
@@ -187,6 +210,7 @@ def main() -> None:
             pip_version=mapping["pip"],
             setuptools_version=mapping["setuptools"],
             wheel_version=mapping["wheel"],
+            minimum_supported_version=mapping["minimum_supported_version"],
         )
 
         print(f"  Writing to {destination}")
