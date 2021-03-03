@@ -92,6 +92,9 @@ def get_ordered_templates() -> List[Tuple[Version, Path]]:
     fallback = None
     ordered_templates = []
     for template in all_templates:
+        # `moved.py` isn't one of the templates to be used here.
+        if template.name == "moved.py":
+            continue
         if template.name == "default.py":
             fallback = template
             continue
