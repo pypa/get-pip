@@ -15,6 +15,7 @@ from cachecontrol import CacheControl
 from cachecontrol.caches.file_cache import FileCache
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
+from rich.console import Console
 
 SCRIPT_CONSTRAINTS = {
     "default": {
@@ -81,6 +82,11 @@ def determine_latest(versions: Iterable[Version], *, constraint: str):
 
 @lru_cache
 def get_ordered_templates() -> List[Tuple[Version, Path]]:
+    """Get an ordered list of templates, based on the max version they support.
+
+    This looks at the templates directory, trims the "pre-" from the files,
+    and returns a sorted list of (version, template_path) tuples.
+    """
     all_templates = list(Path("./templates").iterdir())
 
     fallback = None
@@ -97,6 +103,7 @@ def get_ordered_templates() -> List[Tuple[Version, Path]]:
 
     # Use the epoch mechanism, to force the fallback to the end.
     assert fallback is not None
+    assert fallback.name == "default.py"
     ordered_templates.append((Version("1!0"), fallback))
 
     # Order the (version, template) tuples, by increasing version numbers.
@@ -132,18 +139,18 @@ def populated_script_constraints(original_constraints):
     Also, the yield order is defined as "default" and then versions in
     increasing order.
     """
-    versions = sorted(set(original_constraints) - {"default"})
-    for key in itertools.chain({"default"}, versions):
-        if key == "default":
-            major, minor = map(int, versions[-1].split("."))
+    sorted_python_versions = sorted(set(original_constraints) - {"default"})
+    for variant in itertools.chain(["default"], sorted_python_versions):
+        if variant == "default":
+            major, minor = map(int, sorted_python_versions[-1].split("."))
             minor += 1
         else:
-            major, minor = map(int, key.split("."))
+            major, minor = map(int, variant.split("."))
 
-        value = original_constraints[key].copy()
-        value["minimum_supported_version"] = f"({major}, {minor})"
+        mapping = original_constraints[variant].copy()
+        mapping["minimum_supported_version"] = f"({major}, {minor})"
 
-        yield key, value
+        yield variant, mapping
 
 
 def repack_wheel(data: bytes):
@@ -169,54 +176,65 @@ def encode_wheel_contents(data: bytes) -> str:
     return "\n".join(chunked)
 
 
-def determine_destination(base: str, version: str) -> Path:
+def determine_destination(base: str, variant: str) -> Path:
     public = Path(base)
     if not public.exists():
         public.mkdir()
 
-    if version == "default":
+    if variant == "default":
         return public / "get-pip.py"
 
-    retval = public / version / "get-pip.py"
+    retval = public / variant / "get-pip.py"
     if not retval.parent.exists():
         retval.parent.mkdir()
 
     return retval
 
 
+def generate_one(variant, mapping, *, console, pip_versions):
+    # Determing the correct wheel to download
+    pip_version = determine_latest(pip_versions.keys(), constraint=mapping["pip"])
+    wheel_url, wheel_hash = pip_versions[pip_version]
+
+    console.log(f"  Downloading [green]{PosixPath(wheel_url).name}")
+    original_wheel = download_wheel(wheel_url, wheel_hash)
+    repacked_wheel = repack_wheel(original_wheel)
+    encoded_wheel = encode_wheel_contents(repacked_wheel)
+
+    # Generate the script, by rendering the template
+    template = determine_template(pip_version)
+    console.log(f"  Rendering [yellow]{template}")
+    rendered_template = template.read_text().format(
+        zipfile=encoded_wheel,
+        installed_version=pip_version,
+        pip_version=mapping["pip"],
+        setuptools_version=mapping["setuptools"],
+        wheel_version=mapping["wheel"],
+        minimum_supported_version=mapping["minimum_supported_version"],
+    )
+    # Write the script to the correct location
+    destination = determine_destination("public", variant)
+    console.log(f"  Writing [blue]{destination}")
+    destination.write_text(rendered_template)
+
+    legacy_destination = determine_destination(".", variant)
+    console.log(f"  Writing [blue]{legacy_destination}")
+    legacy_destination.write_text(rendered_template)
+
+
 def main() -> None:
-    print("Fetch available pip versions...")
-    pip_versions = get_all_pip_versions()
+    console = Console()
+    with console.status("Fetching pip versions..."):
+        pip_versions = get_all_pip_versions()
+        console.log(f"Found {len(pip_versions)} available pip versions.")
+        console.log(f"Latest version: {max(pip_versions)}")
 
-    for version, mapping in populated_script_constraints(SCRIPT_CONSTRAINTS):
-        print(f"Working on {version}")
-        destination = determine_destination("public", version)
-        legacy_destination = determine_destination(".", version)
-        pip_version = determine_latest(
-            pip_versions.keys(),
-            constraint=mapping["pip"],
-        )
-        template = determine_template(pip_version)
+    with console.status("Generating scripts...") as status:
+        for variant, mapping in populated_script_constraints(SCRIPT_CONSTRAINTS):
+            status.update(f"Working on [magenta]{variant}")
+            console.log(f"[magenta]{variant}")
 
-        wheel_url, wheel_hash = pip_versions[pip_version]
-        print(f"  Downloading {PosixPath(wheel_url).name}")
-        original_wheel = download_wheel(wheel_url, wheel_hash)
-        repacked_wheel = repack_wheel(original_wheel)
-        encoded_wheel = encode_wheel_contents(repacked_wheel)
-
-        print(f"  Generating with {template}")
-        rendered_template = template.read_text().format(
-            zipfile=encoded_wheel,
-            installed_version=pip_version,
-            pip_version=mapping["pip"],
-            setuptools_version=mapping["setuptools"],
-            wheel_version=mapping["wheel"],
-            minimum_supported_version=mapping["minimum_supported_version"],
-        )
-
-        print(f"  Writing to {destination}")
-        destination.write_text(rendered_template)
-        legacy_destination.write_text(rendered_template)
+            generate_one(variant, mapping, console=console, pip_versions=pip_versions)
 
 
 if __name__ == "__main__":
