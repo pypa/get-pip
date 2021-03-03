@@ -15,6 +15,7 @@ from cachecontrol import CacheControl
 from cachecontrol.caches.file_cache import FileCache
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
+from rich.console import Console
 
 SCRIPT_CONSTRAINTS = {
     "default": {
@@ -190,19 +191,19 @@ def determine_destination(base: str, variant: str) -> Path:
     return retval
 
 
-def generate_one(variant, mapping, *, pip_versions):
+def generate_one(variant, mapping, *, console, pip_versions):
     # Determing the correct wheel to download
     pip_version = determine_latest(pip_versions.keys(), constraint=mapping["pip"])
     wheel_url, wheel_hash = pip_versions[pip_version]
 
-    print(f"  Downloading {PosixPath(wheel_url).name}")
+    console.log(f"  Downloading [green]{PosixPath(wheel_url).name}")
     original_wheel = download_wheel(wheel_url, wheel_hash)
     repacked_wheel = repack_wheel(original_wheel)
     encoded_wheel = encode_wheel_contents(repacked_wheel)
 
     # Generate the script, by rendering the template
     template = determine_template(pip_version)
-    print(f"  Generating with {template}")
+    console.log(f"  Rendering [yellow]{template}")
     rendered_template = template.read_text().format(
         zipfile=encoded_wheel,
         installed_version=pip_version,
@@ -213,20 +214,27 @@ def generate_one(variant, mapping, *, pip_versions):
     )
     # Write the script to the correct location
     destination = determine_destination("public", variant)
-    print(f"  Writing to {destination}")
+    console.log(f"  Writing [blue]{destination}")
     destination.write_text(rendered_template)
 
     legacy_destination = determine_destination(".", variant)
-    print(f"  Writing to {legacy_destination}")
+    console.log(f"  Writing [blue]{legacy_destination}")
     legacy_destination.write_text(rendered_template)
 
 
 def main() -> None:
-    print("Fetch available pip versions...")
-    pip_versions = get_all_pip_versions()
+    console = Console()
+    with console.status("Fetching pip versions..."):
+        pip_versions = get_all_pip_versions()
+        console.log(f"Found {len(pip_versions)} available pip versions.")
+        console.log(f"Latest version: {max(pip_versions)}")
 
-    for variant, mapping in populated_script_constraints(SCRIPT_CONSTRAINTS):
-        generate_one(variant, mapping, pip_versions=pip_versions)
+    with console.status("Generating scripts...") as status:
+        for variant, mapping in populated_script_constraints(SCRIPT_CONSTRAINTS):
+            status.update(f"Working on [magenta]{variant}")
+            console.log(f"[magenta]{variant}")
+
+            generate_one(variant, mapping, console=console, pip_versions=pip_versions)
 
 
 if __name__ == "__main__":
