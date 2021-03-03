@@ -81,6 +81,11 @@ def determine_latest(versions: Iterable[Version], *, constraint: str):
 
 @lru_cache
 def get_ordered_templates() -> List[Tuple[Version, Path]]:
+    """Get an ordered list of templates, based on the max version they support.
+
+    This looks at the templates directory, trims the "pre-" from the files,
+    and returns a sorted list of (version, template_path) tuples.
+    """
     all_templates = list(Path("./templates").iterdir())
 
     fallback = None
@@ -97,6 +102,7 @@ def get_ordered_templates() -> List[Tuple[Version, Path]]:
 
     # Use the epoch mechanism, to force the fallback to the end.
     assert fallback is not None
+    assert fallback.name == "default.py"
     ordered_templates.append((Version("1!0"), fallback))
 
     # Order the (version, template) tuples, by increasing version numbers.
