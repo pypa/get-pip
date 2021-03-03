@@ -55,6 +55,10 @@ SCRIPT_CONSTRAINTS = {
     },
 }
 
+MOVED_SCRIPTS = {
+    # legacy: current
+}
+
 
 def get_all_pip_versions() -> Dict[Version, Tuple[str, str]]:
     data = requests.get("https://pypi.python.org/pypi/pip/json").json()
@@ -225,6 +229,16 @@ def generate_one(variant, mapping, *, console, pip_versions):
     legacy_destination.write_text(rendered_template)
 
 
+def generate_moved(destination: str, *, location: str, console: Console):
+    template = Path("templates") / "moved.py"
+    assert template.exists()
+
+    rendered_template = template.read_text().format(location=location)
+    console.log(f"  Writing [blue]{destination}[reset]")
+    console.log(f"    Points users to [cyan]{location}[reset]")
+    Path(destination).write_text(rendered_template)
+
+
 def main() -> None:
     console = Console()
     with console.status("Fetching pip versions..."):
@@ -238,6 +252,13 @@ def main() -> None:
             console.log(f"[magenta]{variant}")
 
             generate_one(variant, mapping, console=console, pip_versions=pip_versions)
+
+    if MOVED_SCRIPTS:
+        console.log("[magenta]Generating 'moved' scripts...")
+        with console.status("Generating 'moved' scripts...") as status:
+            for legacy, current in MOVED_SCRIPTS.items():
+                status.update(f"Working on [magenta]{legacy}")
+                generate_moved(legacy, console=console, location=current)
 
 
 if __name__ == "__main__":
