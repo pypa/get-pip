@@ -60,7 +60,7 @@ def update_for_release(session):
     session.run("release-helper", "version-check-validity", release_version)
     session.run("release-helper", "git-check-tag", release_version, "--does-not-exist")
     session.run("release-helper", "git-check-remote", "upstream", *allowed_upstreams)
-    session.run("release-helper", "git-check-branch", "master")
+    session.run("release-helper", "git-check-branch", "main")
     session.run("release-helper", "git-check-clean")
 
     # Generate the scripts.
@@ -91,4 +91,4 @@ def update_for_release(session):
         external=True,
         # fmt: on
     )
-    session.run("git", "push", "upstream", "master", release_version, external=True)
+    session.run("git", "push", "upstream", "main", release_version, external=True)
