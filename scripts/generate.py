@@ -196,20 +196,18 @@ def main() -> None:
 
     for version, mapping in populated_script_constraints(SCRIPT_CONSTRAINTS):
         print(f"Working on {version}")
-        destination = determine_destination("public", version)
-        legacy_destination = determine_destination(".", version)
-        pip_version = determine_latest(
-            pip_versions.keys(),
-            constraint=mapping["pip"],
-        )
-        template = determine_template(pip_version)
 
+        # Determing the correct wheel to download
+        pip_version = determine_latest(pip_versions.keys(), constraint=mapping["pip"])
         wheel_url, wheel_hash = pip_versions[pip_version]
+
         print(f"  Downloading {PosixPath(wheel_url).name}")
         original_wheel = download_wheel(wheel_url, wheel_hash)
         repacked_wheel = repack_wheel(original_wheel)
         encoded_wheel = encode_wheel_contents(repacked_wheel)
 
+        # Generate the script, by rendering the template
+        template = determine_template(pip_version)
         print(f"  Generating with {template}")
         rendered_template = template.read_text().format(
             zipfile=encoded_wheel,
@@ -220,8 +218,13 @@ def main() -> None:
             minimum_supported_version=mapping["minimum_supported_version"],
         )
 
+        # Write the script to the correct location
+        destination = determine_destination("public", version)
         print(f"  Writing to {destination}")
         destination.write_text(rendered_template)
+
+        legacy_destination = determine_destination(".", version)
+        print(f"  Writing to {legacy_destination}")
         legacy_destination.write_text(rendered_template)
 
 
