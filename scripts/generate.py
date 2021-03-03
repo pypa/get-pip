@@ -57,6 +57,12 @@ SCRIPT_CONSTRAINTS = {
 
 MOVED_SCRIPTS = {
     # legacy: current
+    "2.6/get-pip.py": "pip/2.6/get-pip.py",
+    "2.7/get-pip.py": "pip/2.7/get-pip.py",
+    "3.2/get-pip.py": "pip/3.2/get-pip.py",
+    "3.3/get-pip.py": "pip/3.3/get-pip.py",
+    "3.4/get-pip.py": "pip/3.4/get-pip.py",
+    "3.5/get-pip.py": "pip/3.5/get-pip.py",
 }
 
 
@@ -223,10 +229,6 @@ def generate_one(variant, mapping, *, console, pip_versions):
     destination = determine_destination("public", variant)
     console.log(f"  Writing [blue]{destination}")
     destination.write_text(rendered_template)
-
-    legacy_destination = determine_destination(".", variant)
-    console.log(f"  Writing [blue]{legacy_destination}")
-    legacy_destination.write_text(rendered_template)
 
 
 def generate_moved(destination: str, *, location: str, console: Console):
