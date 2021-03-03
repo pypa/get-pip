@@ -138,18 +138,18 @@ def populated_script_constraints(original_constraints):
     Also, the yield order is defined as "default" and then versions in
     increasing order.
     """
-    versions = sorted(set(original_constraints) - {"default"})
-    for key in itertools.chain({"default"}, versions):
-        if key == "default":
-            major, minor = map(int, versions[-1].split("."))
+    sorted_python_versions = sorted(set(original_constraints) - {"default"})
+    for variant in itertools.chain(["default"], sorted_python_versions):
+        if variant == "default":
+            major, minor = map(int, sorted_python_versions[-1].split("."))
             minor += 1
         else:
-            major, minor = map(int, key.split("."))
+            major, minor = map(int, variant.split("."))
 
-        value = original_constraints[key].copy()
-        value["minimum_supported_version"] = f"({major}, {minor})"
+        mapping = original_constraints[variant].copy()
+        mapping["minimum_supported_version"] = f"({major}, {minor})"
 
-        yield key, value
+        yield variant, mapping
 
 
 def repack_wheel(data: bytes):
@@ -175,22 +175,22 @@ def encode_wheel_contents(data: bytes) -> str:
     return "\n".join(chunked)
 
 
-def determine_destination(base: str, version: str) -> Path:
+def determine_destination(base: str, variant: str) -> Path:
     public = Path(base)
     if not public.exists():
         public.mkdir()
 
-    if version == "default":
+    if variant == "default":
         return public / "get-pip.py"
 
-    retval = public / version / "get-pip.py"
+    retval = public / variant / "get-pip.py"
     if not retval.parent.exists():
         retval.parent.mkdir()
 
     return retval
 
 
-def generate_one(version, mapping, *, pip_versions):
+def generate_one(variant, mapping, *, pip_versions):
     # Determing the correct wheel to download
     pip_version = determine_latest(pip_versions.keys(), constraint=mapping["pip"])
     wheel_url, wheel_hash = pip_versions[pip_version]
@@ -212,11 +212,11 @@ def generate_one(version, mapping, *, pip_versions):
         minimum_supported_version=mapping["minimum_supported_version"],
     )
     # Write the script to the correct location
-    destination = determine_destination("public", version)
+    destination = determine_destination("public", variant)
     print(f"  Writing to {destination}")
     destination.write_text(rendered_template)
 
-    legacy_destination = determine_destination(".", version)
+    legacy_destination = determine_destination(".", variant)
     print(f"  Writing to {legacy_destination}")
     legacy_destination.write_text(rendered_template)
 
@@ -225,8 +225,8 @@ def main() -> None:
     print("Fetch available pip versions...")
     pip_versions = get_all_pip_versions()
 
-    for version, mapping in populated_script_constraints(SCRIPT_CONSTRAINTS):
-        generate_one(version, mapping, pip_versions=pip_versions)
+    for variant, mapping in populated_script_constraints(SCRIPT_CONSTRAINTS):
+        generate_one(variant, mapping, pip_versions=pip_versions)
 
 
 if __name__ == "__main__":
