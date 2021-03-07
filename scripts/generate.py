@@ -55,6 +55,16 @@ SCRIPT_CONSTRAINTS = {
     },
 }
 
+MOVED_SCRIPTS = {
+    # legacy: current
+    "2.6/get-pip.py": "pip/2.6/get-pip.py",
+    "2.7/get-pip.py": "pip/2.7/get-pip.py",
+    "3.2/get-pip.py": "pip/3.2/get-pip.py",
+    "3.3/get-pip.py": "pip/3.3/get-pip.py",
+    "3.4/get-pip.py": "pip/3.4/get-pip.py",
+    "3.5/get-pip.py": "pip/3.5/get-pip.py",
+}
+
 
 def get_all_pip_versions() -> Dict[Version, Tuple[str, str]]:
     data = requests.get("https://pypi.python.org/pypi/pip/json").json()
@@ -92,6 +102,9 @@ def get_ordered_templates() -> List[Tuple[Version, Path]]:
     fallback = None
     ordered_templates = []
     for template in all_templates:
+        # `moved.py` isn't one of the templates to be used here.
+        if template.name == "moved.py":
+            continue
         if template.name == "default.py":
             fallback = template
             continue
@@ -217,9 +230,15 @@ def generate_one(variant, mapping, *, console, pip_versions):
     console.log(f"  Writing [blue]{destination}")
     destination.write_text(rendered_template)
 
-    legacy_destination = determine_destination(".", variant)
-    console.log(f"  Writing [blue]{legacy_destination}")
-    legacy_destination.write_text(rendered_template)
+
+def generate_moved(destination: str, *, location: str, console: Console):
+    template = Path("templates") / "moved.py"
+    assert template.exists()
+
+    rendered_template = template.read_text().format(location=location)
+    console.log(f"  Writing [blue]{destination}[reset]")
+    console.log(f"    Points users to [cyan]{location}[reset]")
+    Path(destination).write_text(rendered_template)
 
 
 def main() -> None:
@@ -235,6 +254,13 @@ def main() -> None:
             console.log(f"[magenta]{variant}")
 
             generate_one(variant, mapping, console=console, pip_versions=pip_versions)
+
+    if MOVED_SCRIPTS:
+        console.log("[magenta]Generating 'moved' scripts...")
+        with console.status("Generating 'moved' scripts...") as status:
+            for legacy, current in MOVED_SCRIPTS.items():
+                status.update(f"Working on [magenta]{legacy}")
+                generate_moved(legacy, console=console, location=current)
 
 
 if __name__ == "__main__":

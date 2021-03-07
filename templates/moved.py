@@ -9,7 +9,7 @@ Hi there!
 The URL you are using to fetch this script has changed, and this one will no
 longer work. Please use get-pip.py from the following URL instead:
 
-    https://bootstrap.pypa.io/pip/3.5/get-pip.py
+    https://bootstrap.pypa.io/{location}
 
 Sorry if this change causes any inconvenience for you!
 
