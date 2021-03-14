@@ -57,6 +57,7 @@ SCRIPT_CONSTRAINTS = {
 
 MOVED_SCRIPTS = {
     # legacy: current
+    "get-pip.py": "get-pip.py",  # redirect users of the file in the repository root.
     "2.6/get-pip.py": "pip/2.6/get-pip.py",
     "2.7/get-pip.py": "pip/2.7/get-pip.py",
     "3.2/get-pip.py": "pip/3.2/get-pip.py",
