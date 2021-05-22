@@ -55,16 +55,23 @@ SCRIPT_CONSTRAINTS = {
     },
 }
 
-MOVED_SCRIPTS = {
-    # legacy: current
-    "get-pip.py": "get-pip.py",  # redirect users of the file in the repository root.
-    "2.6/get-pip.py": "pip/2.6/get-pip.py",
-    "2.7/get-pip.py": "pip/2.7/get-pip.py",
-    "3.2/get-pip.py": "pip/3.2/get-pip.py",
-    "3.3/get-pip.py": "pip/3.3/get-pip.py",
-    "3.4/get-pip.py": "pip/3.4/get-pip.py",
-    "3.5/get-pip.py": "pip/3.5/get-pip.py",
-}
+# Scripts here use the "moved" template, with the key being the file path and
+# value being the path on bootstrap.pypa.io that the user should use instead.
+#
+# For example, the following dictionary:
+#
+# {
+#     "2.6/get-pip.py": "pip/2.6/get-pip.py",
+# }
+#
+# Will roughly translate to:
+#
+# - generate a script at `2.6/get-pip.py`
+# - the generated script tells the users to change their URL to
+#   https://bootstrap.pypa.io/pip/2.6/get-pip.py
+#
+# This is useful when restructuring this repository, like what we did in early 2021.
+MOVED_SCRIPTS: Dict[str, str] = {}
 
 
 def get_all_pip_versions() -> Dict[Version, Tuple[str, str]]:
