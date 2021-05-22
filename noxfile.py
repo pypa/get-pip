@@ -63,6 +63,10 @@ def update_for_release(session):
     session.run("release-helper", "git-check-branch", "main")
     session.run("release-helper", "git-check-clean")
 
+    release_branch = f"release/{release_version}"
+    session.run("git", "branch", release_branch, external=True)
+    session.run("git", "checkout", release_branch)
+
     # Generate the scripts.
     generate(session)
 
@@ -73,13 +77,17 @@ def update_for_release(session):
 
     input(
         textwrap.dedent(
-            """\
+            f"""\
             **********************************************
             * IMPORTANT: Check which files got modified. *
             **********************************************
 
-            Press enter to continue. This script will generate a signed tag for this
-            commit and push it -- which will publish these changes.
+            This script will now generate a "signed" git tag for this commit and
+            push the tag and release branch to pypa/get-pip. You will need to:
+
+            - File a PR from the `{release_branch}` branch.
+            - Merge it once the CI passes (no need to wait on reviews).
+            - Delete the `{release_branch}` branch on pypa/get-pip.
             """
         )
     )
@@ -91,4 +99,5 @@ def update_for_release(session):
         external=True,
         # fmt: on
     )
-    session.run("git", "push", "upstream", "main", release_version, external=True)
+    session.run("git", "push", "upstream", "HEAD", release_version, external=True)
+    session.run("git", "checkout", "main")
