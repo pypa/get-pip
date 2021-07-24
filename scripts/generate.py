@@ -6,7 +6,7 @@ import re
 from base64 import b85encode
 from functools import lru_cache
 from io import BytesIO
-from pathlib import Path, PosixPath
+from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 from zipfile import ZipFile
 
@@ -217,7 +217,7 @@ def generate_one(variant, mapping, *, console, pip_versions):
     pip_version = determine_latest(pip_versions.keys(), constraint=mapping["pip"])
     wheel_url, wheel_hash = pip_versions[pip_version]
 
-    console.log(f"  Downloading [green]{PosixPath(wheel_url).name}")
+    console.log(f"  Downloading [green]{Path(wheel_url).name}")
     original_wheel = download_wheel(wheel_url, wheel_hash)
     repacked_wheel = repack_wheel(original_wheel)
     encoded_wheel = encode_wheel_contents(repacked_wheel)
