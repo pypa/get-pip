@@ -65,7 +65,7 @@ def update_for_release(session):
 
     release_branch = f"release/{release_version}"
     session.run("git", "branch", release_branch, external=True)
-    session.run("git", "checkout", release_branch)
+    session.run("git", "checkout", release_branch, external=True)
 
     # Generate the scripts.
     generate(session)
@@ -73,7 +73,7 @@ def update_for_release(session):
     # Make the commit and present it to the user.
     session.run("git", "add", ".", external=True)
     session.run("git", "commit", "-m", f"Update to {release_version}", external=True)
-    session.run("git", "show", "HEAD", "--stat")
+    session.run("git", "show", "HEAD", "--stat", external=True)
 
     input(
         textwrap.dedent(
@@ -100,4 +100,4 @@ def update_for_release(session):
         # fmt: on
     )
     session.run("git", "push", "upstream", "HEAD", release_version, external=True)
-    session.run("git", "checkout", "main")
+    session.run("git", "checkout", "main", external=True)
