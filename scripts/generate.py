@@ -6,8 +6,8 @@ import re
 from base64 import b85encode
 from functools import lru_cache
 from io import BytesIO
-from pathlib import Path, PosixPath
-from typing import Dict, Iterable, List, Tuple
+from pathlib import Path
+from typing import Dict, Iterable, List, TextIO, Tuple
 from zipfile import ZipFile
 
 import requests
@@ -212,12 +212,21 @@ def determine_destination(base: str, variant: str) -> Path:
     return retval
 
 
+def detect_newline(f: TextIO) -> str:
+    newline = f.newlines
+    if not newline:
+        return "\n"  # Default to LF.
+    if isinstance(newline, str):
+        return newline
+    return "\n"  # Template has mixed newlines, default to LF.
+
+
 def generate_one(variant, mapping, *, console, pip_versions):
     # Determing the correct wheel to download
     pip_version = determine_latest(pip_versions.keys(), constraint=mapping["pip"])
     wheel_url, wheel_hash = pip_versions[pip_version]
 
-    console.log(f"  Downloading [green]{PosixPath(wheel_url).name}")
+    console.log(f"  Downloading [green]{Path(wheel_url).name}")
     original_wheel = download_wheel(wheel_url, wheel_hash)
     repacked_wheel = repack_wheel(original_wheel)
     encoded_wheel = encode_wheel_contents(repacked_wheel)
@@ -225,28 +234,34 @@ def generate_one(variant, mapping, *, console, pip_versions):
     # Generate the script, by rendering the template
     template = determine_template(pip_version)
     console.log(f"  Rendering [yellow]{template}")
-    rendered_template = template.read_text().format(
-        zipfile=encoded_wheel,
-        installed_version=pip_version,
-        pip_version=mapping["pip"],
-        setuptools_version=mapping["setuptools"],
-        wheel_version=mapping["wheel"],
-        minimum_supported_version=mapping["minimum_supported_version"],
-    )
+    with template.open() as f:
+        newline = detect_newline(f)
+        rendered_template = f.read().format(
+            zipfile=encoded_wheel,
+            installed_version=pip_version,
+            pip_version=mapping["pip"],
+            setuptools_version=mapping["setuptools"],
+            wheel_version=mapping["wheel"],
+            minimum_supported_version=mapping["minimum_supported_version"],
+        )
     # Write the script to the correct location
     destination = determine_destination("public", variant)
     console.log(f"  Writing [blue]{destination}")
-    destination.write_text(rendered_template)
+    with destination.open("w", newline=newline) as f:
+        f.write(rendered_template)
 
 
 def generate_moved(destination: str, *, location: str, console: Console):
     template = Path("templates") / "moved.py"
     assert template.exists()
 
-    rendered_template = template.read_text().format(location=location)
+    with template.open() as f:
+        newline = detect_newline(f)
+        rendered_template = f.read().format(location=location)
     console.log(f"  Writing [blue]{destination}[reset]")
     console.log(f"    Points users to [cyan]{location}[reset]")
-    Path(destination).write_text(rendered_template)
+    with open(destination, "w", newline=newline) as f:
+        f.write(rendered_template)
 
 
 def main() -> None:
