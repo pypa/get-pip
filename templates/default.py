@@ -49,11 +49,7 @@ def include_setuptools(args):
     """
     cli = not args.no_setuptools
     env = not os.environ.get("PIP_NO_SETUPTOOLS")
-    try:
-        importlib.import_module("setuptools")
-        absent = False
-    except ImportError:
-        absent = True
+    absent = not importlib.util.find_spec("setuptools")
     return cli and env and absent
 
 
@@ -63,11 +59,7 @@ def include_wheel(args):
     """
     cli = not args.no_wheel
     env = not os.environ.get("PIP_NO_WHEEL")
-    try:
-        importlib.import_module("wheel")
-        absent = False
-    except ImportError:
-        absent = True
+    absent = not importlib.util.find_spec("wheel")
     return cli and env and absent
 
 
