@@ -1,4 +1,5 @@
 import textwrap
+import webbrowser
 from pathlib import Path
 
 import nox
@@ -100,3 +101,7 @@ def update_for_release(session):
     )
     session.run("git", "push", "upstream", "HEAD", release_version, external=True)
     session.run("git", "checkout", "main", external=True)
+
+    webbrowser.open_new_tab(
+        "https://github.com/pypa/get-pip/compare/{release_branch}?expand=1"
+    )
