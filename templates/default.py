@@ -38,48 +38,44 @@ import os.path
 import pkgutil
 import shutil
 import tempfile
+import argparse
+import importlib
 from base64 import b85decode
 
 
+def include_setuptools(args):
+    """
+    Install setuptools only if absent and not excluded.
+    """
+    cli = not args.no_setuptools
+    env = not os.environ.get("PIP_NO_SETUPTOOLS")
+    absent = not importlib.util.find_spec("setuptools")
+    return cli and env and absent
+
+
+def include_wheel(args):
+    """
+    Install wheel only if absent and not excluded.
+    """
+    cli = not args.no_wheel
+    env = not os.environ.get("PIP_NO_WHEEL")
+    absent = not importlib.util.find_spec("wheel")
+    return cli and env and absent
+
+
 def determine_pip_install_arguments():
-    implicit_pip = True
-    implicit_setuptools = True
-    implicit_wheel = True
+    pre_parser = argparse.ArgumentParser()
+    pre_parser.add_argument("--no-setuptools", action="store_true")
+    pre_parser.add_argument("--no-wheel", action="store_true")
+    pre, args = pre_parser.parse_known_args()
 
-    # Check if the user has requested us not to install setuptools
-    if "--no-setuptools" in sys.argv or os.environ.get("PIP_NO_SETUPTOOLS"):
-        args = [x for x in sys.argv[1:] if x != "--no-setuptools"]
-        implicit_setuptools = False
-    else:
-        args = sys.argv[1:]
+    args.append("pip{pip_version}")
 
-    # Check if the user has requested us not to install wheel
-    if "--no-wheel" in args or os.environ.get("PIP_NO_WHEEL"):
-        args = [x for x in args if x != "--no-wheel"]
-        implicit_wheel = False
+    if include_setuptools(pre):
+        args.append("setuptools{setuptools_version}")
 
-    # We only want to implicitly install setuptools and wheel if they don't
-    # already exist on the target platform.
-    if implicit_setuptools:
-        try:
-            import setuptools  # noqa
-            implicit_setuptools = False
-        except ImportError:
-            pass
-    if implicit_wheel:
-        try:
-            import wheel  # noqa
-            implicit_wheel = False
-        except ImportError:
-            pass
-
-    # Add any implicit installations to the end of our args
-    if implicit_pip:
-        args += ["pip{pip_version}"]
-    if implicit_setuptools:
-        args += ["setuptools{setuptools_version}"]
-    if implicit_wheel:
-        args += ["wheel{wheel_version}"]
+    if include_wheel(pre):
+        args.append("wheel{wheel_version}")
 
     return ["install", "--upgrade", "--force-reinstall"] + args
 
