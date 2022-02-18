@@ -28,7 +28,7 @@ if this_python < min_version:
     message_parts = [
         "This script does not work on Python {{}}.{{}}".format(*this_python),
         "The minimum supported Python version is {{}}.{{}}.".format(*min_version),
-        "Please use https://bootstrap.pypa.io/pip/{{}}.{{}}/get-pip.py instead.".format(*this_python),
+        "If get-pip supports Python {{}}.{{}}, you can get it at https://bootstrap.pypa.io/pip/{{}}.{{}}/get-pip.py.".format(*this_python, *this_python),
     ]
     print("ERROR: " + " ".join(message_parts))
     sys.exit(1)
