@@ -1,8 +1,10 @@
 """Update all the get-pip.py scripts."""
 
+import io
 import itertools
 import operator
 import re
+import shutil
 from base64 import b85encode
 from functools import lru_cache
 from io import BytesIO
@@ -268,6 +270,48 @@ def generate_moved(destination: str, *, location: str, console: Console):
     with open(destination, "w", newline=newline) as f:
         f.write(rendered_template)
 
+ZIPAPP_MAIN = """\
+#!/usr/bin/env python
+
+import os
+import runpy
+import sys
+
+lib = os.path.join(os.path.dirname(__file__), "lib")
+sys.path.insert(0, lib)
+
+runpy.run_module("pip", run_name="__main__")
+"""
+
+def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dict[Version, Tuple[str, str]]) -> None:
+    wheel_url, wheel_hash = pip_versions[pip_version]
+    console.log(f"  Downloading [green]{Path(wheel_url).name}")
+    original_wheel = download_wheel(wheel_url, wheel_hash)
+
+    zipapp_name = f"public/pip-{pip_version}.pyz"
+
+    console.log(f"  Creating [green]{zipapp_name}")
+    with open(zipapp_name, "wb") as f:
+        # Write shebang at the start of the file
+        f.write(b"#!/usr/bin/env python\n")
+
+        # Write the remainder of the zipapp as a zipfile
+        with ZipFile(f, mode="w") as dest:
+            # Write the main script
+            dest.writestr("__main__.py", ZIPAPP_MAIN)
+
+            console.log("  Copying pip from original wheel to zipapp")
+            with ZipFile(io.BytesIO(original_wheel)) as src:
+                for info in src.infolist():
+                    # Ignore all content apart from the "pip" subdirectory
+                    if info.filename.startswith("pip/"):
+                        data = src.read(info)
+                        info.filename = "lib/" + info.filename
+                        dest.writestr(info, data)
+
+    # Make the unversioned pip.pyz
+    shutil.copyfile(zipapp_name, "public/pip.pyz")
+
 
 def main() -> None:
     console = Console()
@@ -289,6 +333,9 @@ def main() -> None:
             for legacy, current in MOVED_SCRIPTS.items():
                 status.update(f"Working on [magenta]{legacy}")
                 generate_moved(legacy, console=console, location=current)
+
+    with console.status("Generating zipapp...") as status:
+        generate_zipapp(max(pip_versions), console=console, pip_versions=pip_versions)
 
 
 if __name__ == "__main__":
