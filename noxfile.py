@@ -38,7 +38,7 @@ def check(session):
 @nox.session
 def generate(session):
     """Update the scripts, to the latest versions."""
-    session.install("packaging", "requests", "cachecontrol[filecache]", "rich")
+    session.install("packaging", "requests", "cachecontrol[filecache]", "rich", "pkg_metadata")
 
     session.run("python", "scripts/generate.py")
 

@@ -17,6 +17,7 @@ from cachecontrol import CacheControl
 from cachecontrol.caches.file_cache import FileCache
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
+from pkg_metadata import bytes_to_json
 from rich.console import Console
 
 SCRIPT_CONSTRAINTS = {
@@ -280,7 +281,18 @@ import sys
 lib = os.path.join(os.path.dirname(__file__), "lib")
 sys.path.insert(0, lib)
 
+{version_check}
 runpy.run_module("pip", run_name="__main__")
+"""
+
+VERSION_CHECK = """\
+from pip._vendor.packaging.specifiers import SpecifierSet
+
+PYTHON_REQUIREMENT = {py_req!r}
+pyver = ".".join(str(i) for i in sys.version_info[:3])
+if pyver not in SpecifierSet(PYTHON_REQUIREMENT):
+    raise SystemExit(f"This copy of pip supports Python {{PYTHON_REQUIREMENT}}, but you have Python {{pyver}}")
+
 """
 
 def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dict[Version, Tuple[str, str]]) -> None:
@@ -297,10 +309,9 @@ def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dic
 
         # Write the remainder of the zipapp as a zipfile
         with ZipFile(f, mode="w") as dest:
-            # Write the main script
-            dest.writestr("__main__.py", ZIPAPP_MAIN)
-
             console.log("  Copying pip from original wheel to zipapp")
+
+            version_check = ""
             with ZipFile(io.BytesIO(original_wheel)) as src:
                 for info in src.infolist():
                     # Ignore all content apart from the "pip" subdirectory
@@ -308,6 +319,15 @@ def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dic
                         data = src.read(info)
                         info.filename = "lib/" + info.filename
                         dest.writestr(info, data)
+                    elif info.filename.endswith(".dist-info/METADATA"):
+                        data = bytes_to_json(src.read(info))
+                        if "requires_python" in data:
+                            py_req=data["requires_python"]
+                            version_check = VERSION_CHECK.format(py_req=py_req)
+                            console.log(f"  Zipapp requires Python {py_req}")
+
+            # Write the main script
+            dest.writestr("__main__.py", ZIPAPP_MAIN.format(version_check=version_check))
 
     # Make the unversioned pip.pyz
     shutil.copyfile(zipapp_name, "public/pip.pyz")
