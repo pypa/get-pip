@@ -48,4 +48,4 @@ jobs:
         python-version: 3.9
 
     # Check that the scripts work.
-    - run: nox -s check
+    - run: nox -s check-2.7 check-3.5 check-3.6 check-3.7 check-3.8 check-3.9
