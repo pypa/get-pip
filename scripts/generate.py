@@ -285,13 +285,21 @@ sys.path.insert(0, lib)
 runpy.run_module("pip", run_name="__main__")
 """
 
+# /!\ This version compatibility check section must be Python 2 compatible. /!\
 VERSION_CHECK = """\
-from pip._vendor.packaging.specifiers import SpecifierSet
+PYTHON_REQUIRES = ({major}, {minor})
 
-PYTHON_REQUIREMENT = {py_req!r}
-pyver = ".".join(str(i) for i in sys.version_info[:3])
-if pyver not in SpecifierSet(PYTHON_REQUIREMENT):
-    raise SystemExit(f"This copy of pip supports Python {{PYTHON_REQUIREMENT}}, but you have Python {{pyver}}")
+def version_str(version):  # type: ignore
+    return ".".join(str(v) for v in version)
+
+if sys.version_info[:2] < PYTHON_REQUIRES:
+    raise SystemExit(
+        "This version of pip does not support python " +
+        version_str(sys.version_info[:2]) +
+        " (requires >= " +
+        version_str(PYTHON_REQUIRES) +
+        ")."
+    )
 
 """
 
@@ -322,9 +330,15 @@ def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dic
                     elif info.filename.endswith(".dist-info/METADATA"):
                         data = bytes_to_json(src.read(info))
                         if "requires_python" in data:
-                            py_req=data["requires_python"]
-                            version_check = VERSION_CHECK.format(py_req=py_req)
-                            console.log(f"  Zipapp requires Python {py_req}")
+                            py_req = data["requires_python"]
+                            py_req = py_req.replace(" ", "")
+                            m = re.match(r"^>=(\d+)\.(\d+)$", py_req)
+                            if m:
+                                major, minor = map(int, m.groups())
+                                version_check = VERSION_CHECK.format(major=major, minor=minor)
+                                console.log(f"  Zipapp requires Python {py_req}")
+                            else:
+                                console.log(f"  Python requirement {py_req} too complex - check skipped")
 
             # Write the main script
             dest.writestr("__main__.py", ZIPAPP_MAIN.format(version_check=version_check))
