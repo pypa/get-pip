@@ -46,6 +46,9 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: 3.9
+    - uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
 
     # Check that the scripts work.
-    - run: nox -s check-2.7 check-3.5 check-3.6 check-3.7 check-3.8 check-3.9
+    - run: nox -s check --no-error-on-missing-interpreters
