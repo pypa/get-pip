@@ -10,7 +10,7 @@ from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
 from typing import Dict, Iterable, List, TextIO, Tuple
-from zipfile import ZipFile
+from zipfile import ZipFile, ZipInfo
 
 import requests
 from cachecontrol import CacheControl
@@ -341,7 +341,13 @@ def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dic
                                 console.log(f"  Python requirement {py_req} too complex - check skipped")
 
             # Write the main script
-            dest.writestr("__main__.py", ZIPAPP_MAIN.format(version_check=version_check))
+            # Use a ZipInfo object to ensure reproducibility - otherwise the current time
+            # is embedded in the file. We also set the create_system to 0 (DOS), as otherwise
+            # it defaults to a value that depends on the OS we're running on.
+            main_info = ZipInfo()
+            main_info.filename = "__main__.py"
+            main_info.create_system = 0
+            dest.writestr(main_info, ZIPAPP_MAIN.format(version_check=version_check))
 
     # Make the unversioned pip.pyz
     shutil.copyfile(zipapp_name, "public/pip.pyz")
