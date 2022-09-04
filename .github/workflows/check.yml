@@ -48,4 +48,4 @@ jobs:
         python-version: 3.9
 
     # Check that the scripts work.
-    - run: nox -s check
+    - run: nox -s check --no-error-on-missing-interpreters
