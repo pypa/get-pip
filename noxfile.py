@@ -9,7 +9,7 @@ nox.options.sessions = ["check", "generate"]
 
 # Keep versions in sync with .github/workflows/check.yml
 @nox.session(
-    python=["2.6", "2.7", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9"]
+    python=["2.6", "2.7", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10"]
 )
 def check(session):
     """Ensure that get-pip.py for various Python versions, works on that version."""
