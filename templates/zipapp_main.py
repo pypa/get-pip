@@ -21,6 +21,6 @@ if PYTHON_REQUIRES != (0, 0):
 import os
 import runpy
 
-lib = os.path.join(os.path.dirname(__file__), "lib")
+lib = os.path.dirname(__file__)
 sys.path.insert(0, lib)
 runpy.run_module("pip", run_name="__main__")

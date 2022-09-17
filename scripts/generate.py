@@ -296,7 +296,6 @@ def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dic
                     # Ignore all content apart from the "pip" subdirectory
                     if info.filename.startswith("pip/"):
                         data = src.read(info)
-                        info.filename = "lib/" + info.filename
                         dest.writestr(info, data)
                     elif info.filename.endswith(".dist-info/METADATA"):
                         data = bytes_to_json(src.read(info))

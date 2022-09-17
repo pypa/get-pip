@@ -28,6 +28,8 @@ def check(session):
 
     # Get rid of provided-by-nox pip
     session.run("python", "-m", "pip", "uninstall", "pip", "--yes")
+    # Run the pip.pyz file
+    session.run("python", "scripts/check_zipapp.py", str(public / "pip.pyz"), "--version")
     # Run the get-pip.py file
     session.run("python", str(location))
     # Ensure that pip is installed
