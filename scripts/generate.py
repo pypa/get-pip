@@ -118,8 +118,8 @@ def get_ordered_templates() -> List[Tuple[Version, Path]]:
     fallback = None
     ordered_templates = []
     for template in all_templates:
-        # `moved.py` isn't one of the templates to be used here.
-        if template.name == "moved.py":
+        # `moved.py` and `zipapp_main.py` aren't templates to be used here.
+        if template.name in ("moved.py", "zipapp_main.py"):
             continue
         if template.name == "default.py":
             fallback = template
@@ -271,37 +271,6 @@ def generate_moved(destination: str, *, location: str, console: Console):
     with open(destination, "w", newline=newline) as f:
         f.write(rendered_template)
 
-ZIPAPP_MAIN = """\
-#!/usr/bin/env python
-
-import os
-import runpy
-import sys
-
-lib = os.path.join(os.path.dirname(__file__), "lib")
-sys.path.insert(0, lib)
-
-{version_check}
-runpy.run_module("pip", run_name="__main__")
-"""
-
-# /!\ This version compatibility check section must be Python 2 compatible. /!\
-VERSION_CHECK = """\
-PYTHON_REQUIRES = ({major}, {minor})
-
-def version_str(version):  # type: ignore
-    return ".".join(str(v) for v in version)
-
-if sys.version_info[:2] < PYTHON_REQUIRES:
-    raise SystemExit(
-        "This version of pip does not support python " +
-        version_str(sys.version_info[:2]) +
-        " (requires >= " +
-        version_str(PYTHON_REQUIRES) +
-        ")."
-    )
-
-"""
 
 def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dict[Version, Tuple[str, str]]) -> None:
     wheel_url, wheel_hash = pip_versions[pip_version]
@@ -319,7 +288,9 @@ def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dic
         with ZipFile(f, mode="w") as dest:
             console.log("  Copying pip from original wheel to zipapp")
 
-            version_check = ""
+            # Version check - 0 means "don't check"
+            major = 0
+            minor = 0
             with ZipFile(io.BytesIO(original_wheel)) as src:
                 for info in src.infolist():
                     # Ignore all content apart from the "pip" subdirectory
@@ -335,7 +306,6 @@ def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dic
                             m = re.match(r"^>=(\d+)\.(\d+)$", py_req)
                             if m:
                                 major, minor = map(int, m.groups())
-                                version_check = VERSION_CHECK.format(major=major, minor=minor)
                                 console.log(f"  Zipapp requires Python {py_req}")
                             else:
                                 console.log(f"  Python requirement {py_req} too complex - check skipped")
@@ -347,7 +317,14 @@ def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dic
             main_info = ZipInfo()
             main_info.filename = "__main__.py"
             main_info.create_system = 0
-            dest.writestr(main_info, ZIPAPP_MAIN.format(version_check=version_check))
+
+            # Note that we explicitly do *not* try to match the newline format
+            # of the source here, as we're writing the content into the zipapp
+            # and we want a reproducible value, i.e., always use the same
+            # newline format.
+            template = Path("templates") / "zipapp_main.py"
+            zipapp_main = template.read_text(encoding="utf-8").format(major=major, minor=minor)
+            dest.writestr(main_info, zipapp_main)
 
     # Make the unversioned pip.pyz
     shutil.copyfile(zipapp_name, "public/pip.pyz")
