@@ -1,20 +1,23 @@
 """Update all the get-pip.py scripts."""
 
+import io
 import itertools
 import operator
 import re
+import shutil
 from base64 import b85encode
 from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
 from typing import Dict, Iterable, List, TextIO, Tuple
-from zipfile import ZipFile
+from zipfile import ZipFile, ZipInfo
 
 import requests
 from cachecontrol import CacheControl
 from cachecontrol.caches.file_cache import FileCache
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
+from pkg_metadata import bytes_to_json
 from rich.console import Console
 
 SCRIPT_CONSTRAINTS = {
@@ -115,8 +118,8 @@ def get_ordered_templates() -> List[Tuple[Version, Path]]:
     fallback = None
     ordered_templates = []
     for template in all_templates:
-        # `moved.py` isn't one of the templates to be used here.
-        if template.name == "moved.py":
+        # `moved.py` and `zipapp_main.py` aren't templates to be used here.
+        if template.name in ("moved.py", "zipapp_main.py"):
             continue
         if template.name == "default.py":
             fallback = template
@@ -269,6 +272,63 @@ def generate_moved(destination: str, *, location: str, console: Console):
         f.write(rendered_template)
 
 
+def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dict[Version, Tuple[str, str]]) -> None:
+    wheel_url, wheel_hash = pip_versions[pip_version]
+    console.log(f"  Downloading [green]{Path(wheel_url).name}")
+    original_wheel = download_wheel(wheel_url, wheel_hash)
+
+    zipapp_name = f"public/pip-{pip_version}.pyz"
+
+    console.log(f"  Creating [green]{zipapp_name}")
+    with open(zipapp_name, "wb") as f:
+        # Write shebang at the start of the file
+        f.write(b"#!/usr/bin/env python\n")
+
+        # Write the remainder of the zipapp as a zipfile
+        with ZipFile(f, mode="w") as dest:
+            console.log("  Copying pip from original wheel to zipapp")
+
+            # Version check - 0 means "don't check"
+            major = 0
+            minor = 0
+            with ZipFile(io.BytesIO(original_wheel)) as src:
+                for info in src.infolist():
+                    # Ignore all content apart from the "pip" subdirectory
+                    if info.filename.startswith("pip/"):
+                        data = src.read(info)
+                        dest.writestr(info, data)
+                    elif info.filename.endswith(".dist-info/METADATA"):
+                        data = bytes_to_json(src.read(info))
+                        if "requires_python" in data:
+                            py_req = data["requires_python"]
+                            py_req = py_req.replace(" ", "")
+                            m = re.match(r"^>=(\d+)\.(\d+)$", py_req)
+                            if m:
+                                major, minor = map(int, m.groups())
+                                console.log(f"  Zipapp requires Python {py_req}")
+                            else:
+                                console.log(f"  Python requirement {py_req} too complex - check skipped")
+
+            # Write the main script
+            # Use a ZipInfo object to ensure reproducibility - otherwise the current time
+            # is embedded in the file. We also set the create_system to 0 (DOS), as otherwise
+            # it defaults to a value that depends on the OS we're running on.
+            main_info = ZipInfo()
+            main_info.filename = "__main__.py"
+            main_info.create_system = 0
+
+            # Note that we explicitly do *not* try to match the newline format
+            # of the source here, as we're writing the content into the zipapp
+            # and we want a reproducible value, i.e., always use the same
+            # newline format.
+            template = Path("templates") / "zipapp_main.py"
+            zipapp_main = template.read_text(encoding="utf-8").format(major=major, minor=minor)
+            dest.writestr(main_info, zipapp_main)
+
+    # Make the unversioned pip.pyz
+    shutil.copyfile(zipapp_name, "public/pip.pyz")
+
+
 def main() -> None:
     console = Console()
     with console.status("Fetching pip versions..."):
@@ -289,6 +349,9 @@ def main() -> None:
             for legacy, current in MOVED_SCRIPTS.items():
                 status.update(f"Working on [magenta]{legacy}")
                 generate_moved(legacy, console=console, location=current)
+
+    with console.status("Generating zipapp...") as status:
+        generate_zipapp(max(pip_versions), console=console, pip_versions=pip_versions)
 
 
 if __name__ == "__main__":
