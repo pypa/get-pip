@@ -1,3 +1,4 @@
+import shutil
 import textwrap
 import webbrowser
 from pathlib import Path
@@ -41,6 +42,9 @@ def check(session):
 def generate(session):
     """Update the scripts, to the latest versions."""
     session.install("packaging", "requests", "cachecontrol[filecache]", "rich", "pkg_metadata")
+
+    public = Path("public")
+    shutil.rmtree(public, ignore_errors=True)
 
     session.run("python", "scripts/generate.py")
 
