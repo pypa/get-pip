@@ -277,7 +277,7 @@ def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dic
     console.log(f"  Downloading [green]{Path(wheel_url).name}")
     original_wheel = download_wheel(wheel_url, wheel_hash)
 
-    zipapp_name = f"public/pip-{pip_version}.pyz"
+    zipapp_name = "public/pip.pyz"
 
     console.log(f"  Creating [green]{zipapp_name}")
     with open(zipapp_name, "wb") as f:
@@ -324,9 +324,6 @@ def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dic
             template = Path("templates") / "zipapp_main.py"
             zipapp_main = template.read_text(encoding="utf-8").format(major=major, minor=minor)
             dest.writestr(main_info, zipapp_main)
-
-    # Make the unversioned pip.pyz
-    shutil.copyfile(zipapp_name, "public/pip.pyz")
 
 
 def main() -> None:
