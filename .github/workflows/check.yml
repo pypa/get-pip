@@ -30,9 +30,6 @@ jobs:
     # Install supported Python versions
     - uses: actions/setup-python@v4
       with:
-        python-version: 2.7
-    - uses: actions/setup-python@v4
-      with:
         python-version: 3.7
     - uses: actions/setup-python@v4
       with:
