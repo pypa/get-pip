@@ -63,7 +63,12 @@ SCRIPT_CONSTRAINTS = {
     },
 }
 
-OLDEST_SUPPORTING_ZIPAPP = Version("22.3")
+# This is the oldest version of pip we will distribute as a zipapp.
+# Pip 22.3 was the first pip to support being shipped as a zipapp,
+# but we may in future choose to increase this value to stop shipping
+# very old pip versions (if we find the overhead of shipping every
+# version is too high).
+OLDEST_ZIPAPP = Version("22.3")
 
 # Scripts here use the "moved" template, with the key being the file path and
 # value being the path on bootstrap.pypa.io that the user should use instead.
@@ -363,7 +368,7 @@ def main() -> None:
 
     with console.status("Generating zipapps...") as status:
         for version in pip_versions:
-            if version < OLDEST_SUPPORTING_ZIPAPP:
+            if version < OLDEST_ZIPAPP:
                 continue
             generate_zipapp(version, console=console, pip_versions=pip_versions)
         generate_zipapp_for_current(max(pip_versions))
