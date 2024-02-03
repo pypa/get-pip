@@ -41,7 +41,7 @@ def check(session):
 @nox.session
 def generate(session):
     """Update the scripts, to the latest versions."""
-    session.install("packaging", "requests", "cachecontrol[filecache]", "rich", "pkg_metadata")
+    session.install("packaging", "requests", "urllib3<2", "cachecontrol[filecache]", "rich", "pkg_metadata")
 
     public = Path("public")
     shutil.rmtree(public, ignore_errors=True)
