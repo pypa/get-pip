@@ -248,7 +248,7 @@ def detect_newline(f: TextIO) -> str:
 
 
 def generate_one(variant, mapping, *, console, pip_versions):
-    # Determing the correct wheel to download
+    # Determining the correct wheel to download
     pip_version = determine_latest(pip_versions.keys(), constraint=mapping["pip"])
     wheel_url, wheel_hash = pip_versions[pip_version]
 
