@@ -229,11 +229,11 @@ def determine_destination(base: str, variant: str) -> Path:
         public.mkdir()
 
     if variant == "default":
-        return public / "get-pip.py"
+        return public
 
-    retval = public / variant / "get-pip.py"
-    if not retval.parent.exists():
-        retval.parent.mkdir()
+    retval = public / variant
+    if not retval.exists():
+        retval.mkdir()
 
     return retval
 
@@ -270,10 +270,13 @@ def generate_one(variant, mapping, *, console, pip_versions):
             wheel_version=mapping["wheel"],
             minimum_supported_version=mapping["minimum_supported_version"],
         )
-    # Write the script to the correct location
+
     destination = determine_destination("public", variant)
-    console.log(f"  Writing [blue]{destination}")
-    with destination.open("w", newline=newline) as f:
+
+    # Write the script to the correct location
+    get_pip = destination / "get-pip.py"
+    console.log(f"  Writing [blue]{get_pip}")
+    with get_pip.open("w", newline=newline) as f:
         f.write(rendered_template)
 
 
