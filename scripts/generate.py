@@ -279,6 +279,12 @@ def generate_one(variant, mapping, *, console, pip_versions):
     with get_pip.open("w", newline=newline) as f:
         f.write(rendered_template)
 
+    # Write a digest of the script to the correct location
+    digest = destination / "get-pip.py.sha256"
+    console.log(f"  Writing [blue]{digest}")
+    with digest.open("w", newline=newline) as f:
+        f.write(hashlib.sha256(rendered_template.encode("utf-8")).hexdigest())
+
 
 def generate_moved(destination: str, *, location: str, console: Console):
     template = Path("templates") / "moved.py"
