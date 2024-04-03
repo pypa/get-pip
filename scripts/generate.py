@@ -63,6 +63,13 @@ SCRIPT_CONSTRAINTS = {
     },
 }
 
+# This is the oldest version of pip we will distribute as a zipapp.
+# Pip 22.3 was the first pip to support being shipped as a zipapp,
+# but we may in future choose to increase this value to stop shipping
+# very old pip versions (if we find the overhead of shipping every
+# version is too high).
+OLDEST_ZIPAPP = Version("22.3")
+
 # Scripts here use the "moved" template, with the key being the file path and
 # value being the path on bootstrap.pypa.io that the user should use instead.
 #
@@ -278,12 +285,18 @@ def generate_moved(destination: str, *, location: str, console: Console):
         f.write(rendered_template)
 
 
+def zipapp_location(pip_version: Version) -> Path:
+    zipapp_dir = Path("public/zipapp")
+    # Ensure that the zipapp directory is present
+    zipapp_dir.mkdir(exist_ok=True)
+    return zipapp_dir / f"pip-{pip_version}.pyz"
+
+
 def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dict[Version, Tuple[str, str]]) -> None:
     wheel_url, wheel_hash = pip_versions[pip_version]
     console.log(f"  Downloading [green]{Path(wheel_url).name}")
     original_wheel = download_wheel(wheel_url, wheel_hash)
-
-    zipapp_name = "public/pip.pyz"
+    zipapp_name = zipapp_location(pip_version)
 
     console.log(f"  Creating [green]{zipapp_name}")
     with open(zipapp_name, "wb") as f:
@@ -332,6 +345,12 @@ def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dic
             dest.writestr(main_info, zipapp_main)
 
 
+def generate_zipapp_for_current(pip_version: Version) -> None:
+    zipapp_name = zipapp_location(pip_version)
+    unversioned_name = "public/pip.pyz"
+    shutil.copy(zipapp_name, unversioned_name)
+
+
 def main() -> None:
     console = Console()
     with console.status("Fetching pip versions..."):
@@ -353,8 +372,12 @@ def main() -> None:
                 status.update(f"Working on [magenta]{legacy}")
                 generate_moved(legacy, console=console, location=current)
 
-    with console.status("Generating zipapp...") as status:
-        generate_zipapp(max(pip_versions), console=console, pip_versions=pip_versions)
+    with console.status("Generating zipapps...") as status:
+        for version in pip_versions:
+            if version < OLDEST_ZIPAPP:
+                continue
+            generate_zipapp(version, console=console, pip_versions=pip_versions)
+        generate_zipapp_for_current(max(pip_versions))
 
 
 if __name__ == "__main__":
