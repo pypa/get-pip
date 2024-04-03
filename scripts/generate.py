@@ -1,5 +1,5 @@
 """Update all the get-pip.py scripts."""
-
+import hashlib
 import io
 import itertools
 import operator
@@ -97,7 +97,7 @@ def get_all_pip_versions() -> Dict[Version, Tuple[str, str]]:
     retval = {}
     for version in versions:
         wheels = [
-            (file["url"], file["md5_digest"])
+            (file["url"], file["digests"]["sha256"])
             for file in data["releases"][str(version)]
             if file["url"].endswith(".whl")
         ]
@@ -156,12 +156,18 @@ def determine_template(version: Version):
         return template
 
 
-def download_wheel(url: str, expected_md5: str) -> bytes:
+def download_wheel(url: str, expected_sha256: str) -> bytes:
     session = requests.session()
     cached_session = CacheControl(session, cache=FileCache(".web_cache"))
 
     response = cached_session.get(url)
-    return response.content
+    response_content = response.content
+
+    hashobj = hashlib.sha256()
+    hashobj.update(response_content)
+    assert hashobj.hexdigest() == expected_sha256
+
+    return response_content
 
 
 def populated_script_constraints(original_constraints):
