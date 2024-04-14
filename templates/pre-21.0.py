@@ -5,7 +5,7 @@
 # You may be wondering what this giant blob of binary data here is, you might
 # even be worried that we're up to something nefarious (good for you for being
 # paranoid!). This is a base85 encoding of a zip file, this zip file contains
-# an entire copy of pip (version {installed_version}).
+# an entire copy of pip (version {bundled_pip_version}).
 #
 # Pip is a thing that installs packages, pip itself is a package that someone
 # might want to install, especially if they're looking to run this get-pip.py
@@ -149,11 +149,11 @@ def bootstrap(tmpdir=None):
 
     # Add any implicit installations to the end of our args
     if implicit_pip:
-        args += ["pip{pip_version}"]
+        args += ["pip"]
     if implicit_setuptools:
-        args += ["setuptools{setuptools_version}"]
+        args += ["setuptools"]
     if implicit_wheel:
-        args += ["wheel{wheel_version}"]
+        args += ["wheel"]
 
     # Add our default arguments
     args = ["install", "--upgrade", "--force-reinstall"] + args

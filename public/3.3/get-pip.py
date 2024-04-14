@@ -147,11 +147,11 @@ def bootstrap(tmpdir=None):
 
     # Add any implicit installations to the end of our args
     if implicit_pip:
-        args += ["pip<18"]
+        args += ["pip"]
     if implicit_setuptools:
         args += ["setuptools"]
     if implicit_wheel:
-        args += ["wheel<0.30"]
+        args += ["wheel"]
 
     # Add our default arguments
     args = ["install", "--upgrade", "--force-reinstall"] + args

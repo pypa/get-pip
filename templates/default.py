@@ -5,7 +5,7 @@
 # You may be wondering what this giant blob of binary data here is, you might
 # even be worried that we're up to something nefarious (good for you for being
 # paranoid!). This is a base85 encoding of a zip file, this zip file contains
-# an entire copy of pip (version {installed_version}).
+# an entire copy of pip (version {bundled_pip_version}).
 #
 # Pip is a thing that installs packages, pip itself is a package that someone
 # might want to install, especially if they're looking to run this get-pip.py
@@ -71,13 +71,13 @@ def determine_pip_install_arguments():
     pre_parser.add_argument("--no-wheel", action="store_true")
     pre, args = pre_parser.parse_known_args()
 
-    args.append("pip{pip_version}")
+    args.append("pip")
 
     if include_setuptools(pre):
-        args.append("setuptools{setuptools_version}")
+        args.append("setuptools")
 
     if include_wheel(pre):
-        args.append("wheel{wheel_version}")
+        args.append("wheel")
 
     return ["install", "--upgrade", "--force-reinstall"] + args
 

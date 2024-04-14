@@ -149,7 +149,7 @@ def bootstrap(tmpdir=None):
 
     # Add any implicit installations to the end of our args
     if implicit_pip:
-        args += ["pip<21.0"]
+        args += ["pip"]
     if implicit_setuptools:
         args += ["setuptools"]
     if implicit_wheel:

@@ -71,7 +71,7 @@ def determine_pip_install_arguments():
     pre_parser.add_argument("--no-wheel", action="store_true")
     pre, args = pre_parser.parse_known_args()
 
-    args.append("pip<24.1")
+    args.append("pip")
 
     if include_setuptools(pre):
         args.append("setuptools")
