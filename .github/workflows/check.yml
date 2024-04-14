@@ -11,8 +11,8 @@ jobs:
     name: "are correctly generated"
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
     - run: pip install nox
 
     - run: nox -s generate
@@ -23,23 +23,34 @@ jobs:
     name: "work as advertised"
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
     - run: pip install nox
 
-    # Install supported Python versions
-    - uses: actions/setup-python@v4
+    # Install supported Python versions. Keep in sync with noxfile.py as
+    # much as possible, however, GitHub Actions eventually drops support
+    # for EOL Python versions, at which point we can't test them in CI.
+    - uses: actions/setup-python@v5
       with:
-        python-version: 3.7
-    - uses: actions/setup-python@v4
+        python-version: "3.7"
+    - uses: actions/setup-python@v5
       with:
-        python-version: 3.8
-    - uses: actions/setup-python@v4
+        python-version: "3.8"
+    - uses: actions/setup-python@v5
       with:
-        python-version: 3.9
-    - uses: actions/setup-python@v4
+        python-version: "3.9"
+    - uses: actions/setup-python@v5
       with:
         python-version: "3.10"
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.13-dev"
 
     # Check that the scripts work.
     - run: nox -s check --no-error-on-missing-interpreters
