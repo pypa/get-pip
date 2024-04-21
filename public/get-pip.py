@@ -26,7 +26,7 @@ this_python = sys.version_info[:2]
 min_version = (3, 8)
 if this_python < min_version:
     message_parts = [
-        "This script does not work on Python {}.{}".format(*this_python),
+        "This script does not work on Python {}.{}.".format(*this_python),
         "The minimum supported Python version is {}.{}.".format(*min_version),
         "Please use https://bootstrap.pypa.io/pip/{}.{}/get-pip.py instead.".format(*this_python),
     ]
