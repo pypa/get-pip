@@ -61,6 +61,11 @@ SCRIPT_CONSTRAINTS = {
         "setuptools": "",
         "wheel": "",
     },
+    "3.7": {
+        "pip": "<24.1",
+        "setuptools": "",
+        "wheel": "",
+    },
 }
 
 # This is the oldest version of pip we will distribute as a zipapp.
@@ -292,7 +297,12 @@ def zipapp_location(pip_version: Version) -> Path:
     return zipapp_dir / f"pip-{pip_version}.pyz"
 
 
-def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dict[Version, Tuple[str, str]]) -> None:
+def generate_zipapp(
+    pip_version: Version,
+    *,
+    console: Console,
+    pip_versions: Dict[Version, Tuple[str, str]],
+) -> None:
     wheel_url, wheel_hash = pip_versions[pip_version]
     console.log(f"  Downloading [green]{Path(wheel_url).name}")
     original_wheel = download_wheel(wheel_url, wheel_hash)
@@ -326,7 +336,9 @@ def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dic
                                 major, minor = map(int, m.groups())
                                 console.log(f"  Zipapp requires Python {py_req}")
                             else:
-                                console.log(f"  Python requirement {py_req} too complex - check skipped")
+                                console.log(
+                                    f"  Python requirement {py_req} too complex - check skipped"
+                                )
 
             # Write the main script
             # Use a ZipInfo object to ensure reproducibility - otherwise the current time
@@ -341,7 +353,9 @@ def generate_zipapp(pip_version: Version, *, console: Console, pip_versions: Dic
             # and we want a reproducible value, i.e., always use the same
             # newline format.
             template = Path("templates") / "zipapp_main.py"
-            zipapp_main = template.read_text(encoding="utf-8").format(major=major, minor=minor)
+            zipapp_main = template.read_text(encoding="utf-8").format(
+                major=major, minor=minor
+            )
             dest.writestr(main_info, zipapp_main)
 
 
