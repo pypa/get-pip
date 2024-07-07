@@ -45,22 +45,24 @@ from base64 import b85decode
 
 def include_setuptools(args):
     """
-    Install setuptools only if absent and not excluded.
+    Install setuptools only if absent, not excluded and when using Python <3.12.
     """
     cli = not args.no_setuptools
     env = not os.environ.get("PIP_NO_SETUPTOOLS")
     absent = not importlib.util.find_spec("setuptools")
-    return cli and env and absent
+    python_lt_3_12 = this_python < (3, 12)
+    return cli and env and absent and python_lt_3_12
 
 
 def include_wheel(args):
     """
-    Install wheel only if absent and not excluded.
+    Install wheel only if absent, not excluded and when using Python <3.12.
     """
     cli = not args.no_wheel
     env = not os.environ.get("PIP_NO_WHEEL")
     absent = not importlib.util.find_spec("wheel")
-    return cli and env and absent
+    python_lt_3_12 = this_python < (3, 12)
+    return cli and env and absent and python_lt_3_12
 
 
 def determine_pip_install_arguments():
@@ -111,7 +113,7 @@ def bootstrap(tmpdir):
     monkeypatch_for_cert(tmpdir)
 
     # Execute the included pip and use it to install the latest pip and
-    # setuptools from PyPI
+    # any user-requested packages from PyPI.
     from pip._internal.cli.main import main as pip_entry_point
     args = determine_pip_install_arguments()
     sys.exit(pip_entry_point(args))
