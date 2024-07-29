@@ -1,7 +1,7 @@
 # get-pip.py
 
-`get-pip.py` is a bootstrapping script that enables users to install pip,
-setuptools, and wheel in Python environments that don't already have them. You
+`get-pip.py` is a bootstrapping script that enables users to install pip
+in Python environments that don't already have it installed. You
 should not directly reference the files located in this repository and instead
 use the versions located at <https://bootstrap.pypa.io/>.
 
@@ -12,26 +12,34 @@ $ curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 $ python get-pip.py
 ```
 
-Upon execution, `get-pip.py` will install `pip`, `setuptools` and `wheel` in
-the current Python environment.
+Upon execution, `get-pip.py` will install the latest version of `pip` into the
+current Python environment. When using Python 3.11 or older, by default the
+packages `setuptools` and `wheel` will also be installed if an existing version
+of them was not found.
 
 It is possible to provide additional arguments to the underlying script. These
 are passed through to the underlying `pip install` command, and can thus be
-used to constraint the versions of the packages, or to pass other pip options
-such as `--no-index`.
+used to constrain the versions of the packages, install additional packages,
+or to pass other pip options such as `--no-index`.
 
 ```console
-$ python get-pip.py "pip < 21.0" "setuptools < 50.0" "wheel < 1.0"
+# Constrain the pip version
+$ python get-pip.py "pip < 21.0"
+
+# Force the installation of `setuptools` and `wheel` on newer Python versions.
+$ python get-pip.py setuptools wheel
+
+# Install packages from a local directory instead of PyPI.
 $ python get-pip.py --no-index --find-links=/local/copies
 ```
 
 ### get-pip.py options
 
-This script also has it's own options, which control which packages it will
+This script also has its own options, which control which packages it will
 install.
 
-- `--no-setuptools`: do not attempt to install `setuptools`.
-- `--no-wheel`: do not attempt to install `wheel`.
+- `--no-setuptools`: Do not attempt to install `setuptools`. This is a no-op on Python 3.12+.
+- `--no-wheel`: Do not attempt to install `wheel`. This is a no-op on Python 3.12+.
 
 ## Development
 
