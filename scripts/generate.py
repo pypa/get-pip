@@ -23,48 +23,34 @@ from rich.console import Console
 SCRIPT_CONSTRAINTS = {
     "default": {
         "pip": "",
-        "setuptools": "",
-        "wheel": "",
     },
     "2.6": {
         "pip": "<10",
-        "setuptools": "<37",
-        "wheel": "<0.30",
     },
     "2.7": {
         "pip": "<21.0",
-        "setuptools": "<45",
-        "wheel": "",
     },
     "3.2": {
+        # Pip older than v9.0.0 does not support Requires-Python so we have to manually
+        # constrain the pip, setuptools and wheel versions that are installed at runtime.
         "pip": "<8",
         "setuptools": "<30",
         "wheel": "<0.30",
     },
     "3.3": {
         "pip": "<18",
-        "setuptools": "",
-        "wheel": "<0.30",
     },
     "3.4": {
         "pip": "<19.2",
-        "setuptools": "",
-        "wheel": "",
     },
     "3.5": {
         "pip": "<21.0",
-        "setuptools": "",
-        "wheel": "",
     },
     "3.6": {
         "pip": "<22.0",
-        "setuptools": "",
-        "wheel": "",
     },
     "3.7": {
         "pip": "<24.1",
-        "setuptools": "",
-        "wheel": "",
     },
 }
 
@@ -248,7 +234,7 @@ def detect_newline(f: TextIO) -> str:
 
 
 def generate_one(variant, mapping, *, console, pip_versions):
-    # Determing the correct wheel to download
+    # Determine the correct wheel to download
     pip_version = determine_latest(pip_versions.keys(), constraint=mapping["pip"])
     wheel_url, wheel_hash = pip_versions[pip_version]
 
@@ -264,10 +250,11 @@ def generate_one(variant, mapping, *, console, pip_versions):
         newline = detect_newline(f)
         rendered_template = f.read().format(
             zipfile=encoded_wheel,
-            installed_version=pip_version,
-            pip_version=mapping["pip"],
-            setuptools_version=mapping["setuptools"],
-            wheel_version=mapping["wheel"],
+            bundled_pip_version=pip_version,
+            # These constraints are only used for pip versions that don't support Requires-Python.
+            pip_version_constraint=mapping.get("pip"),
+            setuptools_version_constraint=mapping.get("setuptools"),
+            wheel_version_constraint=mapping.get("wheel"),
             minimum_supported_version=mapping["minimum_supported_version"],
         )
     # Write the script to the correct location
