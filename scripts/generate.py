@@ -229,11 +229,11 @@ def determine_destination(base: str, variant: str) -> Path:
         public.mkdir()
 
     if variant == "default":
-        return public / "get-pip.py"
+        return public
 
-    retval = public / variant / "get-pip.py"
-    if not retval.parent.exists():
-        retval.parent.mkdir()
+    retval = public / variant
+    if not retval.exists():
+        retval.mkdir()
 
     return retval
 
@@ -248,7 +248,7 @@ def detect_newline(f: TextIO) -> str:
 
 
 def generate_one(variant, mapping, *, console, pip_versions):
-    # Determing the correct wheel to download
+    # Determining the correct wheel to download
     pip_version = determine_latest(pip_versions.keys(), constraint=mapping["pip"])
     wheel_url, wheel_hash = pip_versions[pip_version]
 
@@ -270,11 +270,20 @@ def generate_one(variant, mapping, *, console, pip_versions):
             wheel_version=mapping["wheel"],
             minimum_supported_version=mapping["minimum_supported_version"],
         )
-    # Write the script to the correct location
+
     destination = determine_destination("public", variant)
-    console.log(f"  Writing [blue]{destination}")
-    with destination.open("w", newline=newline) as f:
+
+    # Write the script to the correct location
+    get_pip = destination / "get-pip.py"
+    console.log(f"  Writing [blue]{get_pip}")
+    with get_pip.open("w", newline=newline) as f:
         f.write(rendered_template)
+
+    # Write a digest of the script to the correct location
+    digest = destination / "get-pip.py.sha256"
+    console.log(f"  Writing [blue]{digest}")
+    with digest.open("w", newline=newline) as f:
+        f.write(hashlib.sha256(rendered_template.encode("utf-8")).hexdigest())
 
 
 def generate_moved(destination: str, *, location: str, console: Console):
