@@ -50,7 +50,7 @@ jobs:
         python-version: "3.12"
     - uses: actions/setup-python@v5
       with:
-        python-version: "3.13-dev"
+        python-version: "3.13"
 
     # Check that the scripts work.
-    - run: nox -s check --no-error-on-missing-interpreters
+    - run: nox -s check --no-error-on-missing-interpreters -db venv
