@@ -32,9 +32,6 @@ jobs:
     # for EOL Python versions, at which point we can't test them in CI.
     - uses: actions/setup-python@v5
       with:
-        python-version: "3.7"
-    - uses: actions/setup-python@v5
-      with:
         python-version: "3.8"
     - uses: actions/setup-python@v5
       with:
