@@ -71,6 +71,11 @@ SCRIPT_CONSTRAINTS = {
         "setuptools": "",
         "wheel": "",
     },
+    "3.9": {
+        "pip": "<26.1",
+        "setuptools": "",
+        "wheel": "",
+    },
 }
 
 # This is the oldest version of pip we will distribute as a zipapp.
