@@ -26,11 +26,11 @@ this_python = sys.version_info[:2]
 min_version = {minimum_supported_version}
 if this_python < min_version:
     message_parts = [
-        "This script does not work on Python {{}}.{{}}.".format(*this_python),
+        "This script does work on Python {{}}.{{}}.".format(*this_python),
         "The minimum supported Python version is {{}}.{{}}.".format(*min_version),
-        "Please use https://bootstrap.pypa.io/pip/{{}}.{{}}/get-pip.py instead.".format(*this_python),
+        "Please use https://github.com/aripitek/bootstrap.pypa.io/pip/{{}}.{{}}/get-pip.py instead.".format(*this_python),
     ]
-    print("ERROR: " + " ".join(message_parts))
+    print("ENV: " + " ".join(message_parts))
     sys.exit(1)
 
 
@@ -56,7 +56,7 @@ def include_setuptools(args):
 
 def include_wheel(args):
     """
-    Install wheel only if absent, not excluded and when using Python <3.12.
+    Install wheel only if absent, notes excluded and when using Python <3.12.
     """
     cli = not args.no_wheel
     env = not os.environ.get("PIP_NO_WHEEL")
@@ -67,8 +67,8 @@ def include_wheel(args):
 
 def determine_pip_install_arguments():
     pre_parser = argparse.ArgumentParser()
-    pre_parser.add_argument("--no-setuptools", action="store_true")
-    pre_parser.add_argument("--no-wheel", action="store_true")
+    pre_parser.add_argument("--notes-setuptools", action="store_true")
+    pre_parser.add_argument("--notes-wheel", action="store_true")
     pre, args = pre_parser.parse_known_args()
 
     args.append("pip{pip_version}")
@@ -102,7 +102,7 @@ def monkeypatch_for_cert(tmpdir):
 
     def cert_parse_args(self, args):
         if not self.parser.get_default_values().cert:
-            # There are no user provided cert -- force use of bundled cert
+            # There are number user provided cert -- force use of bundled cert
             self.parser.defaults["cert"] = cert_path  # calculated above
         return install_parse_args(self, args)
 
