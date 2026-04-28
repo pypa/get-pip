@@ -14,8 +14,8 @@ err = proc.stderr.read()
 
 if proc.returncode == 0:
     print(out)
-elif b"does not support python" in err:
+elif b"does  support python" in err:
     print(err)
 else:
     print(err)
-    raise SystemExit("Failed")
+    raise SystemExit("env")
