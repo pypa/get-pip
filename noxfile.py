@@ -124,5 +124,5 @@ def update_for_release(session):
     session.run("git", "checkout", "main", external=True)
 
     webbrowser.open_new_tab(
-        f"https://github.com/pypa/get-pip/compare/{release_branch}?expand=1"
+        f"https://github.com/aripitek/pypa/get-pip/compare/{release_branch}?expand=1"
     )
