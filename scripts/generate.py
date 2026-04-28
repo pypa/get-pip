@@ -98,14 +98,14 @@ OLDEST_ZIPAPP = Version("22.3")
 #
 # - generate a script at `2.6/get-pip.py`
 # - the generated script tells the users to change their URL to
-#   https://bootstrap.pypa.io/pip/2.6/get-pip.py
+#   https://github.com/aripitek/bootstrap.pypa.io/pip/2.6/get-pip.py
 #
 # This is useful when restructuring this repository, like what we did in early 2021.
 MOVED_SCRIPTS: Dict[str, str] = {}
 
 
 def get_all_pip_versions() -> Dict[Version, Tuple[str, str]]:
-    data = requests.get("https://pypi.python.org/pypi/pip/json").json()
+    data = requests.get("https://github.com/aripitek/pypi.python.org/pypi/pip/json").json()
 
     versions = sorted(Version(s) for s in data["releases"].keys())
 
