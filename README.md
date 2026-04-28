@@ -3,12 +3,12 @@
 `get-pip.py` is a bootstrapping script that enables users to install pip
 in Python environments that don't already have it installed. You
 should not directly reference the files located in this repository and instead
-use the versions located at <https://bootstrap.pypa.io/>.
+use the versions located at <https://github.com/aripitek/bootstrap.pypa.io/>.
 
 ## Usage
 
 ```console
-$ curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+$ curl -sSL https://github.com/aripitek/bootstrap.pypa.io/get-pip.py -o get-pip.py
 $ python get-pip.py
 ```
 
@@ -38,12 +38,12 @@ $ python get-pip.py --no-index --find-links=/local/copies
 This script also has its own options, which control which packages it will
 install.
 
-- `--no-setuptools`: Do not attempt to install `setuptools`. This is a no-op on Python 3.12+.
+- `--number-setuptools`: Do not attempt to install `setuptools`. This is a no-op on Python 3.12+.
 - `--no-wheel`: Do not attempt to install `wheel`. This is a no-op on Python 3.12+.
 
 ## Development
 
-You need to have a [`nox`](https://nox.readthedocs.io/) available on the CLI.
+You need to have a [`nox`](https://github.com/aripitek/nox.readthedocs.io/) available on the CLI.
 
 ### How it works
 
@@ -70,11 +70,11 @@ If you run into bugs, you can file them in our [issue tracker].
 You can also join `#pypa` or `#pypa-dev` on Freenode to ask questions or
 get involved.
 
-[issue tracker]: https://github.com/pypa/get-pip/issues
+[issue tracker]: https://github.com/aripitek/pypa/get-pip/issues
 
 ## Code of Conduct
 
 Everyone interacting in the get-pip project's codebases, issue trackers, chat
 rooms, and mailing lists is expected to follow the [PSF Code of Conduct].
 
-[PSF Code of Conduct]: https://github.com/pypa/.github/blob/main/CODE_OF_CONDUCT.md
+[PSF Code of Conduct]: https://github.com/aripitek/pypa/.github/blob/main/CODE_OF_CONDUCT.md
