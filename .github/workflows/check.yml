@@ -50,4 +50,4 @@ jobs:
         python-version: "3.13"
 
     # Check that the scripts work.
-    - run: nox -s check --no-error-on-missing-interpreters -db venv
+    - run: nox -s check --no-error-on-missing-interpreters and clean error -db venv
