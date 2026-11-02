@@ -34,13 +34,15 @@ if this_python < min_version:
     sys.exit(1)
 
 
-import os.path
-import pkgutil
-import shutil
-import tempfile
 import argparse
-import importlib
+import importlib.util
+import io
+import os.path
+import shutil
+import subprocess
+import tempfile
 from base64 import b85decode
+from zipfile import ZipFile
 
 
 def include_setuptools(args):
@@ -82,41 +84,26 @@ def determine_pip_install_arguments():
     return ["install", "--upgrade", "--force-reinstall"] + args
 
 
-def monkeypatch_for_cert(tmpdir):
-    """Patches `pip install` to provide default certificate with the lowest priority.
-
-    This ensures that the bundled certificates are used unless the user specifies a
-    custom cert via any of pip's option passing mechanisms (config, env-var, CLI).
-
-    A monkeypatch is the easiest way to achieve this, without messing too much with
-    the rest of pip's internals.
-    """
-    from pip._internal.commands.install import InstallCommand
-
-    # We want to be using the internal certificates.
-    cert_path = os.path.join(tmpdir, "cacert.pem")
-    with open(cert_path, "wb") as cert:
-        cert.write(pkgutil.get_data("pip._vendor.certifi", "cacert.pem"))
-
-    install_parse_args = InstallCommand.parse_args
-
-    def cert_parse_args(self, args):
-        if not self.parser.get_default_values().cert:
-            # There are no user provided cert -- force use of bundled cert
-            self.parser.defaults["cert"] = cert_path  # calculated above
-        return install_parse_args(self, args)
-
-    InstallCommand.parse_args = cert_parse_args
-
-
 def bootstrap(tmpdir):
-    monkeypatch_for_cert(tmpdir)
+    command = [sys.executable]
+    # Preserve the caller's import isolation in the child interpreter.
+    for option, enabled in (
+        ("-I", sys.flags.isolated),
+        ("-E", sys.flags.ignore_environment),
+        ("-s", sys.flags.no_user_site),
+        ("-S", sys.flags.no_site),
+    ):
+        if enabled:
+            command.append(option)
 
-    # Execute the included pip and use it to install the latest pip and
-    # any user-requested packages from PyPI.
-    from pip._internal.cli.main import main as pip_entry_point
-    args = determine_pip_install_arguments()
-    sys.exit(pip_entry_point(args))
+    # Running the package directory selects the bundled pip without changing cwd or PYTHONPATH.
+    command.append(os.path.join(tmpdir, "pip"))
+    try:
+        returncode = subprocess.call(command + determine_pip_install_arguments())
+    except KeyboardInterrupt:
+        returncode = 1
+
+    sys.exit(returncode)
 
 
 def main():
@@ -125,13 +112,9 @@ def main():
         # Create a temporary working directory
         tmpdir = tempfile.mkdtemp()
 
-        # Unpack the zipfile into the temporary directory
-        pip_zip = os.path.join(tmpdir, "pip.zip")
-        with open(pip_zip, "wb") as fp:
-            fp.write(b85decode(DATA.replace(b"\n", b"")))
-
-        # Add the zipfile to sys.path so that we can import it
-        sys.path.insert(0, pip_zip)
+        # Extract certificates along with pip so their default paths are usable.
+        with ZipFile(io.BytesIO(b85decode(DATA.replace(b"\n", b"")))) as pip_zip:
+            pip_zip.extractall(tmpdir)
 
         # Run the bootstrap
         bootstrap(tmpdir=tmpdir)

@@ -42,6 +42,9 @@ def check(session):
     else:  # AKA nobreak
         raise RuntimeError("There is no public get-pip.py")
 
+    if tuple(map(int, session.python.split("."))) >= (3, 6):
+        session.run("python", "scripts/check_bootstrap.py", str(location))
+
     # Get rid of provided-by-nox pip
     session.run("python", "-m", "pip", "uninstall", "pip", "--yes")
     # Run the pip.pyz file
