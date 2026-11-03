@@ -8,8 +8,8 @@ use the versions located at <https://bootstrap.pypa.io/>.
 ## Usage
 
 ```console
-$ curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-$ python get-pip.py
+curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+python get-pip.py
 ```
 
 Upon execution, `get-pip.py` will install the latest version of `pip` into the
@@ -24,13 +24,13 @@ or to pass other pip options such as `--no-index`.
 
 ```console
 # Constrain the pip version
-$ python get-pip.py "pip < 21.0"
+python get-pip.py "pip < 21.0"
 
 # Force the installation of `setuptools` and `wheel` on newer Python versions.
-$ python get-pip.py setuptools wheel
+python get-pip.py setuptools wheel
 
 # Install packages from a local directory instead of PyPI.
-$ python get-pip.py --no-index --find-links=/local/copies
+python get-pip.py --no-index --find-links=/local/copies
 ```
 
 ### get-pip.py options
