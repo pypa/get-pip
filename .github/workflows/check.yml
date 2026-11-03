@@ -20,8 +20,11 @@ jobs:
       run: git diff --exit-code
 
   work-as-advertised:
-    name: "work as advertised"
-    runs-on: ubuntu-latest
+    name: "work as advertised (${{ matrix.os }})"
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-15-intel, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -30,6 +33,14 @@ jobs:
     # Install supported Python versions. Keep in sync with noxfile.py as
     # much as possible, however, GitHub Actions eventually drops support
     # for EOL Python versions, at which point we can't test them in CI.
+    - uses: actions/setup-python@v5
+      if: matrix.os == 'macos-15-intel'
+      with:
+        python-version: "3.6"
+    - uses: actions/setup-python@v5
+      if: matrix.os == 'macos-15-intel'
+      with:
+        python-version: "3.7"
     - uses: actions/setup-python@v5
       with:
         python-version: "3.8"
@@ -48,6 +59,22 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version: "3.13"
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.14"
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.15"
 
     # Check that the scripts work.
     - run: nox -s check --no-error-on-missing-interpreters -db venv
+
+  all-checks:
+    name: work as advertised
+    needs: [correctly-generated, work-as-advertised]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - run: |
+        test "${{ needs.correctly-generated.result }}" = success
+        test "${{ needs.work-as-advertised.result }}" = success
