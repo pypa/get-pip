@@ -38,8 +38,8 @@ import argparse
 import importlib.util
 import io
 import os.path
+import runpy
 import shutil
-import subprocess
 import tempfile
 from base64 import b85decode
 from zipfile import ZipFile
@@ -84,26 +84,13 @@ def determine_pip_install_arguments():
     return ["install", "--upgrade", "--force-reinstall"] + args
 
 
-def bootstrap(tmpdir):
-    command = [sys.executable]
-    # Preserve the caller's import isolation in the child interpreter.
-    for option, enabled in (
-        ("-I", sys.flags.isolated),
-        ("-E", sys.flags.ignore_environment),
-        ("-s", sys.flags.no_user_site),
-        ("-S", sys.flags.no_site),
-    ):
-        if enabled:
-            command.append(option)
-
-    # Running the package directory selects the bundled pip without changing cwd or PYTHONPATH.
-    command.append(os.path.join(tmpdir, "pip"))
+def bootstrap():
+    # Let runpy set argv[0] to avoid pip's Windows self-modification guard.
+    sys.argv = ["pip"] + determine_pip_install_arguments()
     try:
-        returncode = subprocess.call(command + determine_pip_install_arguments())
+        runpy.run_module("pip", run_name="__main__", alter_sys=True)
     except KeyboardInterrupt:
-        returncode = 1
-
-    sys.exit(returncode)
+        sys.exit(1)
 
 
 def main():
@@ -115,9 +102,10 @@ def main():
         # Extract certificates along with pip so their default paths are usable.
         with ZipFile(io.BytesIO(b85decode(DATA.replace(b"\n", b"")))) as pip_zip:
             pip_zip.extractall(tmpdir)
+        sys.path.insert(0, tmpdir)
 
         # Run the bootstrap
-        bootstrap(tmpdir=tmpdir)
+        bootstrap()
     finally:
         # Clean up our temporary working directory
         if tmpdir:
